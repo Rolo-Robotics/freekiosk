@@ -133,6 +133,10 @@ object ScreenController {
                 wakeLock?.release()
                 wakeLock = null
 
+                // Tell the screen-off receiver this was asked for, so auto-wake does not
+                // undo it the moment ACTION_SCREEN_OFF lands.
+                ScreenStateReceiver.markDeliberateScreenOff(reactContext)
+
                 val dpm = reactContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
                 val adminComp = ComponentName(reactContext, DeviceAdminReceiver::class.java)
 

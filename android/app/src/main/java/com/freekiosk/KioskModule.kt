@@ -1154,6 +1154,11 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
             if (activity != null) {
                 activity.runOnUiThread {
                     try {
+                        // Tell the screen-off receiver this was asked for, so auto-wake does
+                        // not undo it the moment ACTION_SCREEN_OFF lands. Set before the
+                        // branches: the accessibility path locks the screen too.
+                        ScreenStateReceiver.markDeliberateScreenOff(reactApplicationContext)
+
                         val dpm = reactApplicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
                         val adminComponent = ComponentName(reactApplicationContext, DeviceAdminReceiver::class.java)
                         if (dpm.isDeviceOwnerApp(reactApplicationContext.packageName) || dpm.isAdminActive(adminComponent)) {
