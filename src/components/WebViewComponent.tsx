@@ -44,7 +44,7 @@ interface WebViewComponentProps {
   pdfViewerEnabled?: boolean; // Enable inline PDF viewing via PDF.js
   printEnabled?: boolean; // Enable window.print() interception for native printing
   printPaperSize?: string; // Default paper size: 'A4' | 'A5' | 'A3' | 'LETTER' | 'LEGAL'
-  printDestination?: string; // 'dialog' (Android print framework) | 'thermal' (silent ESC/POS)
+  printDestinationMode?: string; // 'dialog' (Android print framework) | 'silent' (ESC/POS thermal printer)
   thermalWidthDots?: number; // Printable width in dots
   thermalCut?: boolean;
   thermalFeedLines?: number;
@@ -88,7 +88,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   pdfViewerEnabled = false,
   printEnabled = false,
   printPaperSize = 'A4',
-  printDestination = 'dialog',
+  printDestinationMode = 'dialog',
   thermalWidthDots = 384,
   thermalCut = false,
   thermalFeedLines = 0,
@@ -386,7 +386,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
 
     // Intercept window.print(): straight to the thermal printer when one is configured,
     // otherwise the Android print dialog as before.
-    ${printEnabled && printDestination === 'thermal' ? `
+    ${printEnabled && printDestinationMode === 'silent' ? `
     (function() {
       var pending = {};
       var nextId = 1;

@@ -211,7 +211,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   // Printing state
   const [printEnabled, setPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
-  const [printDestination, setPrintDestination] = useState<string>('dialog');
+  const [printDestinationMode, setPrintDestinationMode] = useState<string>('dialog');
   const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
   const [thermalCut, setThermalCut] = useState<boolean>(false);
   const [thermalFeedLines, setThermalFeedLines] = useState<number>(0);
@@ -678,7 +678,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setPrintEnabled(savedPrintEnabled);
     const savedPrintPaperSize = await StorageService.getPrintPaperSize();
     setPrintPaperSize(savedPrintPaperSize);
-    setPrintDestination(await StorageService.getPrintDestination());
+    setPrintDestinationMode(await StorageService.getPrintDestinationMode());
     setThermalWidthDots(await StorageService.getThermalWidthDots());
     setThermalCut(await StorageService.getThermalCut());
     setThermalFeedLines(await StorageService.getThermalFeedLines());
@@ -1537,7 +1537,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     // Save Printing setting
     await StorageService.savePrintEnabled(printEnabled);
     await StorageService.savePrintPaperSize(printPaperSize);
-    await StorageService.savePrintDestination(printDestination);
+    await StorageService.savePrintDestinationMode(printDestinationMode);
     await StorageService.saveThermalWidthDots(thermalWidthDots);
     await StorageService.saveThermalCut(thermalCut);
     await StorageService.saveThermalFeedLines(thermalFeedLines);
@@ -1891,8 +1891,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onPrintEnabledChange={setPrintEnabled}
             printPaperSize={printPaperSize}
             onPrintPaperSizeChange={setPrintPaperSize}
-            printDestination={printDestination}
-            onPrintDestinationChange={setPrintDestination}
+            printDestinationMode={printDestinationMode}
+            onPrintDestinationModeChange={setPrintDestinationMode}
             thermalWidthDots={thermalWidthDots}
             onThermalWidthDotsChange={setThermalWidthDots}
             thermalCut={thermalCut}

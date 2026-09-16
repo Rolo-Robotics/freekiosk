@@ -44,7 +44,7 @@ product id if Android does not offer FreeKiosk when it is plugged in.
 1. Plug the printer into the adapter and switch it on.
 2. Android asks which app should open the device. Choose **FreeKiosk** and tick **Always open**.
 3. Go to **Settings > General > Printing**.
-4. Turn on **Allow Printing**, then set **Print Destination** to **Silent Print**.
+4. Turn on **Allow Printing**, then set **Print Destination Mode** to **Silent Print**.
 5. Check the status card names your printer, then tap **Print test page**.
 
 > [!WARNING]

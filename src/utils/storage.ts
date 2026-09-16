@@ -122,8 +122,8 @@ export const KEYS = {
   // Printing
   PRINT_ENABLED: '@kiosk_print_enabled',
   PRINT_PAPER_SIZE: '@kiosk_print_paper_size',
-  // 'dialog' (Android print framework) | 'thermal' (silent ESC/POS)
-  PRINT_DESTINATION: '@kiosk_print_destination',
+  // 'dialog' (Android print framework) | 'silent' (ESC/POS thermal printer)
+  PRINT_DESTINATION_MODE: '@kiosk_print_destination_mode',
   // Origins allowed to use window.FreeKiosk.printer; empty = any
   PRINT_ORIGINS: '@kiosk_print_origins',
   THERMAL_WIDTH_DOTS: '@kiosk_thermal_width_dots',
@@ -520,7 +520,7 @@ export const StorageService = {
         KEYS.PDF_VIEWER_ENABLED,
         // Printing
         KEYS.PRINT_ENABLED,
-        KEYS.PRINT_DESTINATION,
+        KEYS.PRINT_DESTINATION_MODE,
         KEYS.THERMAL_WIDTH_DOTS,
         KEYS.THERMAL_CUT,
         KEYS.THERMAL_FEED_LINES,
@@ -2302,20 +2302,20 @@ export const StorageService = {
     }
   },
 
-  savePrintDestination: async (value: string): Promise<void> => {
+  savePrintDestinationMode: async (value: string): Promise<void> => {
     try {
-      await AsyncStorage.setItem(KEYS.PRINT_DESTINATION, value);
+      await AsyncStorage.setItem(KEYS.PRINT_DESTINATION_MODE, value);
     } catch (error) {
-      console.error('Error saving print destination:', error);
+      console.error('Error saving print destination mode:', error);
     }
   },
 
-  getPrintDestination: async (): Promise<string> => {
+  getPrintDestinationMode: async (): Promise<string> => {
     try {
-      const value = await AsyncStorage.getItem(KEYS.PRINT_DESTINATION);
+      const value = await AsyncStorage.getItem(KEYS.PRINT_DESTINATION_MODE);
       return value || 'dialog';
     } catch (error) {
-      console.error('Error getting print destination:', error);
+      console.error('Error getting print destination mode:', error);
       return 'dialog';
     }
   },
@@ -3276,7 +3276,7 @@ export const StorageService = {
         pdfViewerEnabled: bool(KEYS.PDF_VIEWER_ENABLED),
         printEnabled: bool(KEYS.PRINT_ENABLED),
         printPaperSize: str(KEYS.PRINT_PAPER_SIZE, 'A4'),
-        printDestination: str(KEYS.PRINT_DESTINATION, 'dialog'),
+        printDestinationMode: str(KEYS.PRINT_DESTINATION_MODE, 'dialog'),
         thermalWidthDots: num(KEYS.THERMAL_WIDTH_DOTS, 384),
         thermalCut: bool(KEYS.THERMAL_CUT),
         thermalFeedLines: num(KEYS.THERMAL_FEED_LINES, 0),
@@ -3481,7 +3481,7 @@ export const StorageService = {
       set(KEYS.PDF_VIEWER_ENABLED, g.pdfViewerEnabled);
       set(KEYS.PRINT_ENABLED, g.printEnabled);
       set(KEYS.PRINT_PAPER_SIZE, g.printPaperSize);
-      set(KEYS.PRINT_DESTINATION, g.printDestination);
+      set(KEYS.PRINT_DESTINATION_MODE, g.printDestinationMode);
       set(KEYS.THERMAL_WIDTH_DOTS, g.thermalWidthDots);
       set(KEYS.THERMAL_CUT, g.thermalCut);
       set(KEYS.THERMAL_FEED_LINES, g.thermalFeedLines);

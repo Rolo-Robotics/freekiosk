@@ -170,7 +170,7 @@ const BACKUP_KEYS = [
   '@kiosk_pause_web_media_when_hidden',
   '@kiosk_print_enabled',
   '@kiosk_print_paper_size',
-  '@kiosk_print_destination',
+  '@kiosk_print_destination_mode',
   '@kiosk_thermal_width_dots',
   '@kiosk_thermal_cut',
   '@kiosk_thermal_feed_lines',

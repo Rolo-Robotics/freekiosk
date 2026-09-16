@@ -88,8 +88,8 @@ interface GeneralTabProps {
   onPrintEnabledChange: (value: boolean) => void;
   printPaperSize: string;
   onPrintPaperSizeChange: (value: string) => void;
-  printDestination: string;
-  onPrintDestinationChange: (value: string) => void;
+  printDestinationMode: string;
+  onPrintDestinationModeChange: (value: string) => void;
   thermalWidthDots: number;
   onThermalWidthDotsChange: (value: number) => void;
   thermalCut: boolean;
@@ -216,8 +216,8 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onPrintEnabledChange,
   printPaperSize,
   onPrintPaperSizeChange,
-  printDestination,
-  onPrintDestinationChange,
+  printDestinationMode,
+  onPrintDestinationModeChange,
   thermalWidthDots,
   onThermalWidthDotsChange,
   thermalCut,
@@ -997,7 +997,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
             <>
               <View style={styles.rotationSpacer} />
               <SettingsDropdown
-                label="Print Destination"
+                label="Print Destination Mode"
                 options={[
                   {
                     value: 'dialog',
@@ -1005,18 +1005,18 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
                     description: 'Opens Android print dialog on window.print()',
                   },
                   {
-                    value: 'thermal',
+                    value: 'silent',
                     label: 'Silent Print',
                     description: 'Automatically starts printing based on pre-configured settings on window.print()',
                   },
                 ]}
-                value={printDestination}
-                onValueChange={onPrintDestinationChange}
+                value={printDestinationMode}
+                onValueChange={onPrintDestinationModeChange}
               />
             </>
           )}
 
-          {printEnabled && printDestination === 'thermal' && (
+          {printEnabled && printDestinationMode === 'silent' && (
             <ThermalPrinterSection
               widthDots={thermalWidthDots}
               onWidthDotsChange={onThermalWidthDotsChange}
@@ -1029,7 +1029,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
             />
           )}
 
-          {printEnabled && printDestination !== 'thermal' && (
+          {printEnabled && printDestinationMode !== 'silent' && (
             <>
               <SettingsRadioGroup
                 label="Default Paper Size"
