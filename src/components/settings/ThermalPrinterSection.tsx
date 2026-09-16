@@ -163,7 +163,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
 
       <SettingsInput
         label="Print width (dots)"
-        hint="Printable width in dots, as listed in the printer's specification"
+        hint="Printable width in dots (set according to the printer's specification)"
         value={String(widthDots)}
         onChangeText={(text) => onWidthDotsChange(parseInt(text, 10) || 0)}
         placeholder={String(DEFAULT_THERMAL_WIDTH_DOTS)}
