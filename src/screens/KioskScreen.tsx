@@ -214,6 +214,11 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const pdfViewerEnabledRef = useRef<boolean>(false);
   const [printEnabled, setPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
+  const [printDestination, setPrintDestination] = useState<string>('dialog');
+  const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
+  const [thermalCut, setThermalCut] = useState<boolean>(false);
+  const [thermalFeedLines, setThermalFeedLines] = useState<number>(4);
+  const [thermalOrigins, setThermalOrigins] = useState<string>('');
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [zoomMode, setZoomMode] = useState<string>('standard');
   const [disableUserZoom, setDisableUserZoom] = useState<boolean>(false);
@@ -1870,6 +1875,11 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       setPrintEnabled(savedPrintEnabled);
       const savedPrintPaperSize = str(K.PRINT_PAPER_SIZE) ?? 'A4';
       setPrintPaperSize(savedPrintPaperSize);
+      setPrintDestination(str(K.PRINT_DESTINATION) ?? 'dialog');
+      setThermalWidthDots(num(K.THERMAL_WIDTH_DOTS, 384));
+      setThermalCut(bool(K.THERMAL_CUT, false));
+      setThermalFeedLines(num(K.THERMAL_FEED_LINES, 4));
+      setThermalOrigins(str(K.THERMAL_ORIGINS) ?? '');
       
       // Load WebView Zoom Level
       const savedZoomLevel = num(K.WEBVIEW_ZOOM_LEVEL, 100);
@@ -2824,6 +2834,11 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
               pdfViewerEnabled={pdfViewerEnabled}
               printEnabled={printEnabled}
               printPaperSize={printPaperSize}
+              printDestination={printDestination}
+              thermalWidthDots={thermalWidthDots}
+              thermalCut={thermalCut}
+              thermalFeedLines={thermalFeedLines}
+              thermalOrigins={thermalOrigins}
               zoomLevel={zoomLevel}
               zoomMode={zoomMode}
               disableUserZoom={disableUserZoom}

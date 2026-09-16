@@ -174,6 +174,7 @@ const BACKUP_KEYS = [
   '@kiosk_thermal_width_dots',
   '@kiosk_thermal_cut',
   '@kiosk_thermal_feed_lines',
+  '@kiosk_thermal_origins',
   '@screensaver_type',
   '@screensaver_url',
   '@screensaver_video_items',

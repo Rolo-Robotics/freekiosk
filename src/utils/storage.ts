@@ -127,6 +127,7 @@ export const KEYS = {
   THERMAL_WIDTH_DOTS: '@kiosk_thermal_width_dots',
   THERMAL_CUT: '@kiosk_thermal_cut',
   THERMAL_FEED_LINES: '@kiosk_thermal_feed_lines',
+  THERMAL_ORIGINS: '@kiosk_thermal_origins',
   // WebView Zoom Level
   WEBVIEW_ZOOM_LEVEL: '@kiosk_webview_zoom_level',
   // WebView Zoom Mode ('standard' = CSS zoom | 'fit' = viewport reflow, #188)
@@ -522,6 +523,7 @@ export const StorageService = {
         KEYS.THERMAL_WIDTH_DOTS,
         KEYS.THERMAL_CUT,
         KEYS.THERMAL_FEED_LINES,
+        KEYS.THERMAL_ORIGINS,
         // WebView Zoom Level
         KEYS.WEBVIEW_ZOOM_LEVEL,
         KEYS.WEBVIEW_ZOOM_MODE,
@@ -2373,6 +2375,23 @@ export const StorageService = {
     }
   },
 
+  saveThermalOrigins: async (value: string): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.THERMAL_ORIGINS, value);
+    } catch (error) {
+      console.error('Error saving thermal origins:', error);
+    }
+  },
+
+  getThermalOrigins: async (): Promise<string> => {
+    try {
+      return (await AsyncStorage.getItem(KEYS.THERMAL_ORIGINS)) || '';
+    } catch (error) {
+      console.error('Error getting thermal origins:', error);
+      return '';
+    }
+  },
+
   // ============ WebView Zoom Level ============
 
   saveWebViewZoomLevel: async (value: number): Promise<void> => {
@@ -3260,6 +3279,7 @@ export const StorageService = {
         thermalWidthDots: num(KEYS.THERMAL_WIDTH_DOTS, 384),
         thermalCut: bool(KEYS.THERMAL_CUT),
         thermalFeedLines: num(KEYS.THERMAL_FEED_LINES, 4),
+        thermalOrigins: str(KEYS.THERMAL_ORIGINS, ''),
         urlRotation: {
           enabled: bool(KEYS.URL_ROTATION_ENABLED),
           list: json(KEYS.URL_ROTATION_LIST, []),
@@ -3464,6 +3484,7 @@ export const StorageService = {
       set(KEYS.THERMAL_WIDTH_DOTS, g.thermalWidthDots);
       set(KEYS.THERMAL_CUT, g.thermalCut);
       set(KEYS.THERMAL_FEED_LINES, g.thermalFeedLines);
+      set(KEYS.THERMAL_ORIGINS, g.thermalOrigins);
       const ur = g.urlRotation as Record<string, unknown> | undefined;
       if (ur) {
         set(KEYS.URL_ROTATION_ENABLED, ur.enabled);

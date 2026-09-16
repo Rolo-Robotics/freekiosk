@@ -95,6 +95,8 @@ interface GeneralTabProps {
   onThermalCutChange: (value: boolean) => void;
   thermalFeedLines: number;
   onThermalFeedLinesChange: (value: number) => void;
+  thermalOrigins: string;
+  onThermalOriginsChange: (value: string) => void;
   
   // URL Rotation (webview only)
   urlRotationEnabled: boolean;
@@ -221,6 +223,8 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onThermalCutChange,
   thermalFeedLines,
   onThermalFeedLinesChange,
+  thermalOrigins,
+  onThermalOriginsChange,
   urlRotationEnabled,
   onUrlRotationEnabledChange,
   urlRotationList,
@@ -1011,6 +1015,8 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
               onCutChange={onThermalCutChange}
               feedLines={thermalFeedLines}
               onFeedLinesChange={onThermalFeedLinesChange}
+              origins={thermalOrigins}
+              onOriginsChange={onThermalOriginsChange}
             />
           )}
 

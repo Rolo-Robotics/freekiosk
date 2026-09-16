@@ -22,6 +22,7 @@ import { WebView } from 'react-native-webview';
 import type { WebViewErrorEvent, ShouldStartLoadRequest, WebViewRenderProcessGoneEvent } from 'react-native-webview/lib/WebViewTypes';
 import { useNavigation } from '@react-navigation/native';
 import PrintModule from '../utils/PrintModule';
+import ThermalPrintModule from '../utils/ThermalPrintModule';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -43,6 +44,11 @@ interface WebViewComponentProps {
   pdfViewerEnabled?: boolean; // Enable inline PDF viewing via PDF.js
   printEnabled?: boolean; // Enable window.print() interception for native printing
   printPaperSize?: string; // Default paper size: 'A4' | 'A5' | 'A3' | 'LETTER' | 'LEGAL'
+  printDestination?: string; // 'dialog' (Android print framework) | 'thermal' (silent ESC/POS)
+  thermalWidthDots?: number; // Print width in dots: 384 = 58mm, 576 = 80mm at 203dpi
+  thermalCut?: boolean;
+  thermalFeedLines?: number;
+  thermalOrigins?: string; // Origins allowed to use window.FreeKiosk.printer; empty = any
   zoomLevel?: number; // Zoom level percentage (50-200, default 100)
   zoomMode?: string; // 'standard' (CSS zoom) | 'fit' (viewport reflow, #188)
   disableUserZoom?: boolean; // Prevent pinch-to-zoom and double-tap zoom
@@ -82,6 +88,11 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   pdfViewerEnabled = false,
   printEnabled = false,
   printPaperSize = 'A4',
+  printDestination = 'dialog',
+  thermalWidthDots = 384,
+  thermalCut = false,
+  thermalFeedLines = 4,
+  thermalOrigins = '',
   zoomLevel = 100,
   zoomMode = 'standard',
   disableUserZoom = false,
@@ -373,8 +384,62 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       console.error('[FreeKiosk] localStorage FAILED:', e);
     }
 
-    // Intercept window.print() to use native Android print (only when printing is enabled)
-    ${printEnabled ? `
+    // Intercept window.print(). With a thermal printer configured it goes straight to paper;
+    // otherwise it opens the Android print dialog as before.
+    ${printEnabled && printDestination === 'thermal' ? `
+    (function() {
+      var pending = {};
+      var nextId = 1;
+
+      function call(op, data) {
+        return new Promise(function(resolve, reject) {
+          var id = String(nextId++);
+          pending[id] = { resolve: resolve, reject: reject };
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'FK_PRINTER', op: op, id: id, data: data || {}
+          }));
+        });
+      }
+
+      // Native answers here; see the __fkSetVoices precedent in this file.
+      window.__fkSettle = function(json) {
+        var result;
+        try { result = JSON.parse(json); } catch (e) { return; }
+        var entry = pending[result.id];
+        if (!entry) return;
+        delete pending[result.id];
+        if (result.ok) {
+          entry.resolve(result.value);
+        } else {
+          var error = new Error(result.message || 'Printing failed');
+          error.code = result.code || 'ERROR';
+          entry.reject(error);
+        }
+      };
+
+      window.FreeKiosk = window.FreeKiosk || {};
+      window.FreeKiosk.version = 1;
+      window.FreeKiosk.printer = {
+        // { state, paper, printer } — lets a page say "out of paper" instead of claiming success.
+        status: function() { return call('status'); },
+        // Prints THIS page through its print stylesheet.
+        printPage: function(jobName) {
+          return call('printPage', { jobName: jobName || document.title || '' });
+        },
+        // For pages that would rather render their own bitmap (PNG/JPEG base64 or data URL).
+        printImage: function(base64) { return call('printImage', { base64: base64 }); }
+      };
+
+      window.print = function() {
+        window.FreeKiosk.printer.printPage().catch(function(e) {
+          console.error('[FreeKiosk] Print failed:', e && e.code ? e.code : e);
+        });
+      };
+
+      // Injection happens after load, so a page that boots faster than this must be told.
+      window.dispatchEvent(new Event('freekiosk:ready'));
+    })();
+    ` : printEnabled ? `
     window.print = function() {
       window.ReactNativeWebView.postMessage(JSON.stringify({
         type: 'PRINT_REQUEST',
@@ -711,6 +776,68 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   const combinedInjectedJavaScript = injectedJavaScript + getKeyboardModeScript();
 
   // Gestion des messages venant de la webview
+  /** Resolve or reject one window.FreeKiosk.printer call in the page. */
+  const settlePrinterRequest = (payload: Record<string, unknown>) => {
+    // Double-stringify so the JSON survives being embedded in a JS string literal.
+    const safeArg = JSON.stringify(JSON.stringify(payload));
+    webViewRef.current?.injectJavaScript(`window.__fkSettle && window.__fkSettle(${safeArg}); true;`);
+  };
+
+  /**
+   * Is this page allowed to print?
+   *
+   * An empty allow-list means any page the kiosk is displaying may print, matching what
+   * window.print() has always done — the operator chose the URL. Listing origins narrows it, which
+   * matters because the bridge is reachable from iframes on the page as well.
+   */
+  const printerOriginAllowed = (pageUrl?: string): boolean => {
+    const allowed = thermalOrigins
+      .split(/[\s,]+/)
+      .map((entry) => entry.trim().replace(/\/$/, ''))
+      .filter(Boolean);
+    if (allowed.length === 0) return true;
+    const origin = (pageUrl ?? '').match(/^[a-z]+:\/\/[^/]+/i)?.[0] ?? '';
+    return allowed.some((entry) => entry.toLowerCase() === origin.toLowerCase());
+  };
+
+  const handlePrinterRequest = (data: any, pageUrl?: string) => {
+    const id = data.id;
+    const fail = (code: string, message: string) =>
+      settlePrinterRequest({ id, ok: false, code, message });
+
+    if (!printerOriginAllowed(pageUrl)) {
+      console.warn('[FreeKiosk] Printer request blocked for origin:', pageUrl);
+      fail('ORIGIN_NOT_ALLOWED', 'This page is not allowed to print');
+      return;
+    }
+
+    const options = {
+      widthDots: thermalWidthDots,
+      cut: thermalCut,
+      feedLines: thermalFeedLines,
+    };
+    const payload = data.data || {};
+    let work: Promise<unknown>;
+    switch (data.op) {
+      case 'status':
+        work = ThermalPrintModule.status();
+        break;
+      case 'printPage':
+        work = ThermalPrintModule.printPage(payload.jobName ?? null, options);
+        break;
+      case 'printImage':
+        work = ThermalPrintModule.printImage(payload.base64 ?? '', options);
+        break;
+      default:
+        fail('UNKNOWN_OP', `Unknown printer operation: ${data.op}`);
+        return;
+    }
+
+    work
+      .then((value) => settlePrinterRequest({ id, ok: true, value }))
+      .catch((err: any) => fail(err?.code ?? 'ERROR', err?.message ?? 'Printing failed'));
+  };
+
   const onMessageHandler = (event: any) => {
     const message = event.nativeEvent.data;
     
@@ -754,6 +881,8 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
           PrintModule.printWebView(data.title || 'FreeKiosk Print', data.paperSize || 'A4')
             .then(() => console.log('[WebView] Print job started'))
             .catch((err: any) => console.error('[WebView] Print failed:', err));
+        } else if (data.type === 'FK_PRINTER') {
+          handlePrinterRequest(data, event.nativeEvent?.url);
         } else if (data.type === 'PDF_VIEWER_CLOSE') {
           // User closed PDF viewer, go back to previous page
           if (webViewRef.current) {

@@ -215,6 +215,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
   const [thermalCut, setThermalCut] = useState<boolean>(false);
   const [thermalFeedLines, setThermalFeedLines] = useState<number>(4);
+  const [thermalOrigins, setThermalOrigins] = useState<string>('');
   
   // WebView Zoom Level
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -681,6 +682,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setThermalWidthDots(await StorageService.getThermalWidthDots());
     setThermalCut(await StorageService.getThermalCut());
     setThermalFeedLines(await StorageService.getThermalFeedLines());
+    setThermalOrigins(await StorageService.getThermalOrigins());
 
     // Dashboard settings
     const savedDashboardModeEnabled = await StorageService.getDashboardModeEnabled();
@@ -1539,6 +1541,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     await StorageService.saveThermalWidthDots(thermalWidthDots);
     await StorageService.saveThermalCut(thermalCut);
     await StorageService.saveThermalFeedLines(thermalFeedLines);
+    await StorageService.saveThermalOrigins(thermalOrigins);
 
     // Save Media Player settings
     if (displayMode === 'media_player') {
@@ -1896,6 +1899,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onThermalCutChange={setThermalCut}
             thermalFeedLines={thermalFeedLines}
             onThermalFeedLinesChange={setThermalFeedLines}
+            thermalOrigins={thermalOrigins}
+            onThermalOriginsChange={setThermalOrigins}
             urlRotationEnabled={urlRotationEnabled}
             onUrlRotationEnabledChange={setUrlRotationEnabled}
             urlRotationList={urlRotationList}

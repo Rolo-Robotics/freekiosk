@@ -18,6 +18,7 @@ import ThermalPrintModule, {
 } from '../../utils/ThermalPrintModule';
 import SettingsButton from './SettingsButton';
 import SettingsInfoBox from './SettingsInfoBox';
+import SettingsInput from './SettingsInput';
 import SettingsRadioGroup from './SettingsRadioGroup';
 import SettingsSlider from './SettingsSlider';
 import SettingsSwitch from './SettingsSwitch';
@@ -29,6 +30,8 @@ interface ThermalPrinterSectionProps {
   onCutChange: (value: boolean) => void;
   feedLines: number;
   onFeedLinesChange: (value: number) => void;
+  origins: string;
+  onOriginsChange: (value: string) => void;
 }
 
 const STATE_LABELS: Record<ThermalPrinterStatus['state'], string> = {
@@ -46,6 +49,8 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
   onCutChange,
   feedLines,
   onFeedLinesChange,
+  origins,
+  onOriginsChange,
 }) => {
   const [status, setStatus] = useState<ThermalPrinterStatus | null>(null);
   const [checking, setChecking] = useState(false);
@@ -180,6 +185,16 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
         hint="Only for printers with a cutter; harmless but pointless on those without"
         value={cut}
         onValueChange={onCutChange}
+      />
+
+      <SettingsInput
+        label="Allowed origins"
+        hint="Optional. Sites that may print via window.FreeKiosk.printer, one per line. Leave empty to allow whatever the kiosk is displaying."
+        value={origins}
+        onChangeText={onOriginsChange}
+        placeholder="https://shop.example.com"
+        multiline
+        autoCapitalize="none"
       />
 
       <SettingsButton
