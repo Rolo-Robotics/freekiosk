@@ -211,6 +211,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   // Printing state
   const [printEnabled, setPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
+  const [printDestination, setPrintDestination] = useState<string>('dialog');
+  const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
+  const [thermalCut, setThermalCut] = useState<boolean>(false);
+  const [thermalFeedLines, setThermalFeedLines] = useState<number>(4);
   
   // WebView Zoom Level
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -673,6 +677,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setPrintEnabled(savedPrintEnabled);
     const savedPrintPaperSize = await StorageService.getPrintPaperSize();
     setPrintPaperSize(savedPrintPaperSize);
+    setPrintDestination(await StorageService.getPrintDestination());
+    setThermalWidthDots(await StorageService.getThermalWidthDots());
+    setThermalCut(await StorageService.getThermalCut());
+    setThermalFeedLines(await StorageService.getThermalFeedLines());
 
     // Dashboard settings
     const savedDashboardModeEnabled = await StorageService.getDashboardModeEnabled();
@@ -1527,6 +1535,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     // Save Printing setting
     await StorageService.savePrintEnabled(printEnabled);
     await StorageService.savePrintPaperSize(printPaperSize);
+    await StorageService.savePrintDestination(printDestination);
+    await StorageService.saveThermalWidthDots(thermalWidthDots);
+    await StorageService.saveThermalCut(thermalCut);
+    await StorageService.saveThermalFeedLines(thermalFeedLines);
 
     // Save Media Player settings
     if (displayMode === 'media_player') {
@@ -1876,6 +1888,14 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onPrintEnabledChange={setPrintEnabled}
             printPaperSize={printPaperSize}
             onPrintPaperSizeChange={setPrintPaperSize}
+            printDestination={printDestination}
+            onPrintDestinationChange={setPrintDestination}
+            thermalWidthDots={thermalWidthDots}
+            onThermalWidthDotsChange={setThermalWidthDots}
+            thermalCut={thermalCut}
+            onThermalCutChange={setThermalCut}
+            thermalFeedLines={thermalFeedLines}
+            onThermalFeedLinesChange={setThermalFeedLines}
             urlRotationEnabled={urlRotationEnabled}
             onUrlRotationEnabledChange={setUrlRotationEnabled}
             urlRotationList={urlRotationList}

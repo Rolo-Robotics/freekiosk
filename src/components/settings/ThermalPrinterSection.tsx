@@ -1,0 +1,245 @@
+/**
+ * FreeKiosk - Thermal printer settings
+ *
+ * Configures the silent ESC/POS destination for window.print(): which printer is attached, how wide
+ * the paper is, and what happens after a receipt. The test page proves the whole path with no web
+ * page involved, which is the first thing to try against unfamiliar hardware.
+ */
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Alert } from 'react-native';
+
+import Icon from '../Icon';
+import { Colors, FontSizes, Spacing } from '../../theme';
+import ThermalPrintModule, {
+  THERMAL_WIDTH_58MM,
+  THERMAL_WIDTH_80MM,
+  type ThermalPrinterStatus,
+} from '../../utils/ThermalPrintModule';
+import SettingsButton from './SettingsButton';
+import SettingsInfoBox from './SettingsInfoBox';
+import SettingsRadioGroup from './SettingsRadioGroup';
+import SettingsSlider from './SettingsSlider';
+import SettingsSwitch from './SettingsSwitch';
+
+interface ThermalPrinterSectionProps {
+  widthDots: number;
+  onWidthDotsChange: (value: number) => void;
+  cut: boolean;
+  onCutChange: (value: boolean) => void;
+  feedLines: number;
+  onFeedLinesChange: (value: number) => void;
+}
+
+const STATE_LABELS: Record<ThermalPrinterStatus['state'], string> = {
+  ready: 'Ready',
+  no_printer: 'No printer detected',
+  no_permission: 'Access not granted',
+  paper_out: 'Out of paper',
+  error: 'Error',
+};
+
+const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
+  widthDots,
+  onWidthDotsChange,
+  cut,
+  onCutChange,
+  feedLines,
+  onFeedLinesChange,
+}) => {
+  const [status, setStatus] = useState<ThermalPrinterStatus | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setChecking(true);
+    try {
+      setStatus(await ThermalPrintModule.status());
+    } catch (error) {
+      console.error('[ThermalPrinter] Status failed:', error);
+      setStatus({ state: 'error', paper: 'unknown', printer: null });
+    } finally {
+      setChecking(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const handleGrantAccess = async () => {
+    try {
+      const granted = await ThermalPrintModule.requestPermission();
+      if (!granted) {
+        Alert.alert(
+          'Access denied',
+          'The printer cannot be used until access is granted.\n\nTip: unplug and replug the printer, then tick "Always open" so the grant survives reboots.',
+        );
+      }
+      await refresh();
+    } catch (error) {
+      console.error('[ThermalPrinter] Permission request failed:', error);
+    }
+  };
+
+  const handleTestPage = async () => {
+    setPrinting(true);
+    try {
+      await ThermalPrintModule.printTestPage({ widthDots, cut, feedLines });
+    } catch (error: any) {
+      const code = error?.code ?? 'ERROR';
+      const messages: Record<string, string> = {
+        NO_PRINTER: 'No printer is attached. Check the cable and the USB adapter.',
+        NO_PERMISSION: 'Access to the printer has not been granted yet.',
+        PAPER_OUT: 'The printer is out of paper.',
+        OPEN_FAILED: 'The printer could not be opened. Another app may be holding it.',
+        WRITE_FAILED: 'The printer stopped accepting data part-way through.',
+      };
+      Alert.alert('Test page failed', messages[code] ?? error?.message ?? 'Unknown error');
+    } finally {
+      setPrinting(false);
+      refresh();
+    }
+  };
+
+  const printer = status?.printer ?? null;
+  const state = status?.state ?? 'error';
+  const tone =
+    state === 'ready' ? Colors.success : state === 'no_printer' ? Colors.textSecondary : Colors.warning;
+
+  return (
+    <>
+      <View style={styles.card}>
+        <View style={styles.statusRow}>
+          <Icon
+            name={state === 'ready' ? 'check-circle' : 'alert-circle'}
+            size={18}
+            color={tone}
+          />
+          <Text style={[styles.statusText, { color: tone }]}>{STATE_LABELS[state]}</Text>
+        </View>
+
+        {printer && (
+          <>
+            <Text style={styles.detail}>{printer.name}</Text>
+            <Text style={styles.detailMuted}>
+              {printer.commandSet ? `Commands: ${printer.commandSet}` : 'Command set not reported'}
+              {printer.hardwareId ? `  ·  ${printer.hardwareId}` : ''}
+            </Text>
+          </>
+        )}
+        {status?.paper === 'unknown' && state === 'ready' && (
+          <Text style={styles.detailMuted}>This printer does not report paper level.</Text>
+        )}
+
+        <View style={styles.actions}>
+          <SettingsButton
+            title="Refresh"
+            icon="refresh"
+            variant="outline"
+            size="small"
+            fullWidth={false}
+            loading={checking}
+            onPress={refresh}
+          />
+          {state === 'no_permission' && (
+            <SettingsButton
+              title="Grant access"
+              icon="lock-open"
+              size="small"
+              fullWidth={false}
+              onPress={handleGrantAccess}
+            />
+          )}
+        </View>
+      </View>
+
+      <SettingsRadioGroup
+        label="Paper width"
+        options={[
+          { value: String(THERMAL_WIDTH_58MM), label: `58 mm (${THERMAL_WIDTH_58MM} dots)` },
+          { value: String(THERMAL_WIDTH_80MM), label: `80 mm (${THERMAL_WIDTH_80MM} dots)` },
+        ]}
+        value={String(widthDots)}
+        onValueChange={(value) => onWidthDotsChange(parseInt(value, 10))}
+      />
+
+      <SettingsSlider
+        label="Feed after printing"
+        hint="Blank lines fed so the last line clears the tear bar"
+        value={feedLines}
+        onValueChange={onFeedLinesChange}
+        minimumValue={0}
+        maximumValue={10}
+        step={1}
+        unit=" lines"
+      />
+
+      <SettingsSwitch
+        label="Cut paper"
+        hint="Only for printers with a cutter; harmless but pointless on those without"
+        value={cut}
+        onValueChange={onCutChange}
+      />
+
+      <SettingsButton
+        title="Print test page"
+        icon="printer"
+        variant="secondary"
+        loading={printing}
+        disabled={state === 'no_printer'}
+        onPress={handleTestPage}
+      />
+
+      <SettingsInfoBox variant="info">
+        <Text style={styles.infoText}>
+          {'Receipts print silently — no print dialog, which is what Android\'s own print framework cannot do.\n\n'}
+          {'For access that survives reboots: plug the printer in, then choose FreeKiosk and tick "Always open". A grant made with the button above only lasts until the printer is unplugged, and lock task mode suppresses the dialog entirely.\n\n'}
+          {'Printers exposing a vendor-specific USB interface (rather than the standard printer class) are still driven, but cannot report paper level.'}
+        </Text>
+      </SettingsInfoBox>
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  statusText: {
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+  },
+  detail: {
+    marginTop: Spacing.sm,
+    fontSize: FontSizes.md,
+    color: Colors.textPrimary,
+  },
+  detailMuted: {
+    marginTop: 2,
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  infoText: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+});
+
+export default ThermalPrinterSection;

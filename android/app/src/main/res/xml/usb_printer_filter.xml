@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Which USB devices count as a receipt printer.
+
+  Class 7 is the USB-IF Printer Class, which nearly every USB receipt printer implements, and Android
+  matches it against the device class OR any of its interface classes. Targeting the class rather
+  than a list of vendor ids is what makes this work with hardware nobody here has seen.
+
+  A printer that only exposes a vendor-specific interface will not match. Add it by vendor and
+  product id — Settings shows both for the attached device:
+    <usb-device vendor-id="1234" product-id="5678" />
+  Note those attributes are DECIMAL, while the settings screen shows the usual hexadecimal pair.
+-->
+<resources>
+    <usb-device class="7" />
+</resources>

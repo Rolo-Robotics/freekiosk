@@ -143,6 +143,24 @@
         </intent-filter>
       </activity>
 
+      <!-- USB receipt printer: declaring this filter is what lets Android offer "always open for
+           this device", which is the only USB grant that survives an unplug or a reboot. The
+           activity shows nothing and finishes at once — the kiosk never leaves its page. -->
+      <activity
+        android:name="com.freekiosk.printing.UsbPrinterAttachActivity"
+        android:exported="true"
+        android:excludeFromRecents="true"
+        android:noHistory="true"
+        android:taskAffinity=""
+        android:theme="@android:style/Theme.NoDisplay">
+        <intent-filter>
+          <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+        </intent-filter>
+        <meta-data
+          android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+          android:resource="@xml/usb_printer_filter" />
+      </activity>
+
       <!-- Device Admin Receiver pour le mode kiosk -->
       <receiver
         android:name=".DeviceAdminReceiver"
