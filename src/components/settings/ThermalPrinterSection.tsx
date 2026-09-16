@@ -10,13 +10,11 @@ import Icon from '../Icon';
 import { Colors, FontSizes, Spacing } from '../../theme';
 import ThermalPrintModule, {
   DEFAULT_THERMAL_WIDTH_DOTS,
-  dotsFromMillimetres,
   type ThermalPrinterStatus,
 } from '../../utils/ThermalPrintModule';
 import SettingsButton from './SettingsButton';
 import SettingsInfoBox from './SettingsInfoBox';
 import SettingsInput from './SettingsInput';
-import SettingsRadioGroup from './SettingsRadioGroup';
 import SettingsSlider from './SettingsSlider';
 import SettingsSwitch from './SettingsSwitch';
 
@@ -61,12 +59,6 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
   const [status, setStatus] = useState<ThermalPrinterStatus | null>(null);
   const [checking, setChecking] = useState(false);
   const [printing, setPrinting] = useState(false);
-  // Paper is only ever stored as dots; millimetres and dpi are an input aid, not state to keep.
-  const [widthMode, setWidthMode] = useState<'dots' | 'paper'>('dots');
-  const [paperWidthMm, setPaperWidthMm] = useState('48');
-  const [paperDpi, setPaperDpi] = useState('203');
-
-  const convertedDots = dotsFromMillimetres(Number(paperWidthMm), Number(paperDpi));
 
   const refresh = useCallback(async (): Promise<ThermalPrinterStatus> => {
     setChecking(true);
@@ -170,52 +162,14 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
         </View>
       </View>
 
-      <SettingsRadioGroup
-        label="Print width"
-        options={[
-          { value: 'dots', label: 'In dots' },
-          { value: 'paper', label: 'From paper width and DPI' },
-        ]}
-        value={widthMode}
-        onValueChange={(value) => setWidthMode(value as 'dots' | 'paper')}
+      <SettingsInput
+        label="Print width (dots)"
+        hint="Printable width in dots, as listed in the printer's specification"
+        value={String(widthDots)}
+        onChangeText={(text) => onWidthDotsChange(parseInt(text, 10) || 0)}
+        placeholder={String(DEFAULT_THERMAL_WIDTH_DOTS)}
+        keyboardType="number-pad"
       />
-
-      {widthMode === 'dots' ? (
-        <SettingsInput
-          label="Width in dots"
-          hint={`Printable width, in dots. ${DEFAULT_THERMAL_WIDTH_DOTS} suits most 58 mm printers.`}
-          value={String(widthDots)}
-          onChangeText={(text) => onWidthDotsChange(parseInt(text, 10) || 0)}
-          placeholder={String(DEFAULT_THERMAL_WIDTH_DOTS)}
-          keyboardType="number-pad"
-        />
-      ) : (
-        <>
-          <SettingsInput
-            label="Printable width (mm)"
-            hint="The printing width from the printer's specification, not the paper roll width"
-            value={paperWidthMm}
-            onChangeText={setPaperWidthMm}
-            placeholder="48"
-            keyboardType="numeric"
-          />
-          <SettingsInput
-            label="Resolution (DPI)"
-            hint="Usually 203 on receipt printers, sometimes 180 or 300"
-            value={paperDpi}
-            onChangeText={setPaperDpi}
-            placeholder="203"
-            keyboardType="number-pad"
-          />
-          <SettingsButton
-            title={convertedDots > 0 ? `Use ${convertedDots} dots` : 'Enter a width and DPI'}
-            icon="check"
-            variant="outline"
-            disabled={convertedDots <= 0}
-            onPress={() => onWidthDotsChange(convertedDots)}
-          />
-        </>
-      )}
 
       <SettingsSlider
         label="Feed after printing"

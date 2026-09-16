@@ -55,13 +55,8 @@ product id if Android does not offer FreeKiosk when it is plugged in.
 The test page shows a column ruler, currency and accented characters, a grey ramp and hairlines. If
 the ruler wraps or leaves a wide margin, the **Print width** is wrong.
 
-Width is measured in **dots**, which is the only paper setting stored — no dot pitch is assumed
-anywhere. Set it either way:
-
-- **In dots**, when you know the figure. 384 suits most 58 mm printers, 576 most 80 mm ones.
-- **From paper width and DPI**, when the specification gives millimetres: enter the *printable*
-  width (48 mm on a typical 58 mm printer, since the roll is wider than the print head) and the
-  resolution, usually 203. FreeKiosk converts and stores the dots.
+Width is set in **dots**, the printable width listed in the printer's specification. Dots are what
+the printer actually addresses, so no paper size or resolution is assumed anywhere.
 
 
 ## Printing From a Web Page
@@ -128,7 +123,7 @@ kiosk displays may print, which is what `window.print()` has always done.
 |---------|-------|
 | Status shows **No printer detected** | Cable, adapter or printer power. Check the adapter carries data, not only power |
 | Status shows **Access not granted** | Tap **Grant access**. If the printer was already plugged in when FreeKiosk was installed, Android never offered the "Always open" choice — unplug and replug it once to get that prompt |
-| Ruler wraps, or leaves a wide margin | Wrong **Print width**. Set it in dots, or from the printable width and DPI |
+| Ruler wraps, or leaves a wide margin | Wrong **Print width**. Check the dot width in the printer's specification |
 | Nothing prints, no error | Printer is out of paper but has no sensor. Check the roll |
 | A long blank strip after each receipt | Reduce **Feed after printing** |
 | `PAGE_RENDER_FAILED` | The page could not be rendered. Have the page render its own bitmap and call `printImage` instead |

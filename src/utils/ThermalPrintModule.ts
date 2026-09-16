@@ -1,17 +1,6 @@
 import { NativeModules } from 'react-native';
 
-/** Dot width of the most common receipt printers, and the only paper setting stored. */
 export const DEFAULT_THERMAL_WIDTH_DOTS = 384;
-
-const MM_PER_INCH = 25.4;
-
-/** Converts a printable width to dots, for printers whose spec sheet is in millimetres. */
-export function dotsFromMillimetres(millimetres: number, dpi: number): number {
-  if (!Number.isFinite(millimetres) || !Number.isFinite(dpi) || millimetres <= 0 || dpi <= 0) {
-    return 0;
-  }
-  return Math.round((millimetres * dpi) / MM_PER_INCH);
-}
 
 export type ThermalPrinterState =
   | 'ready'
