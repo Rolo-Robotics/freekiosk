@@ -78,6 +78,7 @@ adb shell dpm set-device-owner com.freekiosk/.DeviceAdminReceiver
 |-------|-------------|------|
 | **Installation** | Complete setup guide from basic to Device Owner mode | [Read →](Installation) |
 | **Features & Modes** | Understand WebView, External App, Dashboard modes | [Read →](Features-and-Modes) |
+| **Thermal Printing** | Silent receipt printing from a web page | [Read →](Thermal-Printing) |
 | **FAQ** | Common questions and troubleshooting | [Read →](FAQ) |
 
 ### Integration & Automation
