@@ -166,7 +166,10 @@ class UsbPrinterTransport(private val context: Context) : PrinterTransport {
             override fun onReceive(ctx: Context, intent: Intent) {
                 if (intent.action != ACTION_USB_PERMISSION) return
                 runCatching { context.unregisterReceiver(this) }
-                callback(intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false))
+                // Falls back to the live answer: the extra is missing if the broadcast could not be
+                // filled in, which would otherwise read as a denial of a permission we now hold.
+                val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+                callback(granted || hasPermission())
             }
         }
         ContextCompat.registerReceiver(
@@ -177,9 +180,13 @@ class UsbPrinterTransport(private val context: Context) : PrinterTransport {
         )
     }
 
+    /**
+     * Must be MUTABLE: the framework fills the result extras into this intent when it sends it, and
+     * an immutable one arrives with no EXTRA_PERMISSION_GRANTED at all.
+     */
     private fun permissionIntent(): PendingIntent {
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0
         return PendingIntent.getBroadcast(
             context,
             0,

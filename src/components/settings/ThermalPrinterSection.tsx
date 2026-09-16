@@ -62,13 +62,17 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
   const [checking, setChecking] = useState(false);
   const [printing, setPrinting] = useState(false);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<ThermalPrinterStatus> => {
     setChecking(true);
     try {
-      setStatus(await ThermalPrintModule.status());
+      const next = await ThermalPrintModule.status();
+      setStatus(next);
+      return next;
     } catch (error) {
       console.error('[ThermalPrinter] Status failed:', error);
-      setStatus({ state: 'error', paper: 'unknown', printer: null });
+      const failed: ThermalPrinterStatus = { state: 'error', paper: 'unknown', printer: null };
+      setStatus(failed);
+      return failed;
     } finally {
       setChecking(false);
     }
@@ -80,14 +84,15 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
 
   const handleGrantAccess = async () => {
     try {
-      const granted = await ThermalPrintModule.requestPermission();
-      if (!granted) {
+      await ThermalPrintModule.requestPermission();
+      // Judged on the printer's actual state, not on what the request reported.
+      const next = await refresh();
+      if (next.state === 'no_permission') {
         Alert.alert(
           'Access denied',
-          'The printer cannot be used until access is granted.\n\nTip: unplug and replug the printer, then tick "Always open" so the grant survives reboots.',
+          'The printer cannot be used until access is granted.',
         );
       }
-      await refresh();
     } catch (error) {
       console.error('[ThermalPrinter] Permission request failed:', error);
     }

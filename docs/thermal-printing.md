@@ -115,7 +115,7 @@ kiosk displays may print, which is what `window.print()` has always done.
 | Symptom | Cause |
 |---------|-------|
 | Status shows **No printer detected** | Cable, adapter or printer power. Check the adapter carries data, not only power |
-| Status shows **Access not granted** | Unplug and replug the printer, then choose FreeKiosk and tick "Always open" |
+| Status shows **Access not granted** | Tap **Grant access**. If the printer was already plugged in when FreeKiosk was installed, Android never offered the "Always open" choice — unplug and replug it once to get that prompt |
 | Ruler wraps, or leaves a wide margin | Wrong **Paper width** |
 | Nothing prints, no error | Printer is out of paper but has no sensor. Check the roll |
 | A long blank strip after each receipt | Reduce **Feed after printing** |
