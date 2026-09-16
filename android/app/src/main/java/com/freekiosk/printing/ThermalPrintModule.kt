@@ -71,6 +71,47 @@ class ThermalPrintModule(reactContext: ReactApplicationContext) :
         }
     }
 
+    /**
+     * Print the page the WebView is showing, as its print stylesheet describes it.
+     *
+     * This is the zero-integration path: a web app that already prints to paper anywhere else needs
+     * no code here at all, and keeps its own fonts, languages and QR codes.
+     */
+    @ReactMethod
+    fun printPage(jobName: String?, options: ReadableMap?, promise: Promise) {
+        val opts = printOptions(options)
+        val activity = reactApplicationContext.currentActivity
+        if (activity == null) {
+            promise.reject(PrinterException.NO_WEBVIEW, "No activity is in the foreground")
+            return
+        }
+        val webView = WebViewLocator.find(activity)
+        if (webView == null) {
+            promise.reject(PrinterException.NO_WEBVIEW, "No web page is being displayed")
+            return
+        }
+
+        executor.execute {
+            try {
+                val image = PageRasterizer.rasterize(
+                    reactApplicationContext,
+                    webView,
+                    jobName?.takeIf { it.isNotBlank() } ?: "FreeKiosk receipt",
+                    opts,
+                )
+                transport.write(driver.encode(image, opts))
+                DebugLog.d(NAME, "Printed page: ${image.width}x${image.height} dots")
+                promise.resolve(true)
+            } catch (e: PrinterException) {
+                DebugLog.errorProduction(NAME, "Page print failed (${e.code}): ${e.message}")
+                promise.reject(e.code, e.message, e)
+            } catch (e: Exception) {
+                DebugLog.errorProduction(NAME, "Page print failed: ${e.message}")
+                promise.reject("ERROR", "Could not print the page: ${e.message}", e)
+            }
+        }
+    }
+
     /** Print a PNG/JPEG, given as base64 (a `data:` prefix is tolerated). */
     @ReactMethod
     fun printImage(base64: String?, options: ReadableMap?, promise: Promise) {

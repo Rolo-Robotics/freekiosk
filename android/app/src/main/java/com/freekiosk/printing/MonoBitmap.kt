@@ -56,6 +56,26 @@ class MonoBitmap(
     companion object {
         fun bytesPerRow(width: Int): Int = (width + 7) / 8
 
+        /**
+         * Stack images top to bottom. Used to rejoin a receipt that the page layout split across
+         * pages, so it prints as the single continuous strip the paper actually is.
+         */
+        fun concat(parts: List<MonoBitmap>): MonoBitmap {
+            require(parts.isNotEmpty()) { "Nothing to join" }
+            if (parts.size == 1) return parts.first()
+            val width = parts.first().width
+            require(parts.all { it.width == width }) { "Every part must share a width" }
+
+            val height = parts.sumOf { it.height }
+            val rows = ByteArray(bytesPerRow(width) * height)
+            var offset = 0
+            for (part in parts) {
+                part.rows.copyInto(rows, offset)
+                offset += part.rows.size
+            }
+            return MonoBitmap(width, height, rows)
+        }
+
         /** Default luminance cut. Anti-aliased text keeps its shape either side of the middle. */
         const val DEFAULT_THRESHOLD = 128
 

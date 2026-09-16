@@ -97,5 +97,9 @@ class PrinterException(
         const val OPEN_FAILED = "OPEN_FAILED"
         const val WRITE_FAILED = "WRITE_FAILED"
         const val BAD_IMAGE = "BAD_IMAGE"
+        /** The page could not be turned into dots — see PageRasterizer. */
+        const val PAGE_RENDER_FAILED = "PAGE_RENDER_FAILED"
+        /** No WebView on screen to print, e.g. the kiosk is in external-app mode. */
+        const val NO_WEBVIEW = "NO_WEBVIEW"
     }
 }

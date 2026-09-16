@@ -42,6 +42,11 @@ interface ThermalPrintModuleType {
   status(): Promise<ThermalPrinterStatus>;
   /** Shows the system USB dialog. The grant it returns lasts only until the printer is unplugged. */
   requestPermission(): Promise<boolean>;
+  /**
+   * Print the page currently shown in the kiosk WebView, as its print stylesheet describes it.
+   * The zero-integration path: a web app that already prints anywhere else needs no changes.
+   */
+  printPage(jobName: string | null, options: ThermalPrintOptions | null): Promise<boolean>;
   printImage(base64: string, options: ThermalPrintOptions | null): Promise<boolean>;
   printTestPage(options: ThermalPrintOptions | null): Promise<boolean>;
 }
