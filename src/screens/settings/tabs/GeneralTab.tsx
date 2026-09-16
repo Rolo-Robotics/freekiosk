@@ -1002,7 +1002,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
                   {
                     value: 'dialog',
                     label: 'Print Dialog',
-                    description: 'Opens a print dialog box on window.print()',
+                    description: 'Opens Android print dialog on window.print()',
                   },
                   {
                     value: 'thermal',
