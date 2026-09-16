@@ -45,7 +45,7 @@ interface WebViewComponentProps {
   printEnabled?: boolean; // Enable window.print() interception for native printing
   printPaperSize?: string; // Default paper size: 'A4' | 'A5' | 'A3' | 'LETTER' | 'LEGAL'
   printDestination?: string; // 'dialog' (Android print framework) | 'thermal' (silent ESC/POS)
-  thermalWidthDots?: number; // Print width in dots: 384 = 58mm, 576 = 80mm at 203dpi
+  thermalWidthDots?: number; // Printable width in dots
   thermalCut?: boolean;
   thermalFeedLines?: number;
   thermalOrigins?: string; // Origins allowed to use window.FreeKiosk.printer; empty = any

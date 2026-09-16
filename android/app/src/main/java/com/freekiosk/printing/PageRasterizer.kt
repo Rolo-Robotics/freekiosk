@@ -23,14 +23,21 @@ import java.util.concurrent.atomic.AtomicReference
  * Turns the displayed page into printer dots, honouring its print stylesheet.
  *
  * WebView renders to PDF exactly as it would for the print dialog, and PdfRenderer turns that into
- * pixels at the printer's dot pitch, so a page needs only CSS to print: `@media print` plus
- * `@page { size: 48mm auto; margin: 0 }`.
+ * pixels at the configured dot width, so a page needs only CSS to print.
+ *
+ * The page is laid out so that **one CSS pixel is one printer dot**: CSS fixes 96px to the inch, so
+ * asking for a page `widthDots / 96` inches wide gives a layout exactly `widthDots` pixels across.
+ * Nothing here assumes a dot pitch, which is why only the dot width is ever configured.
  */
 object PageRasterizer {
 
     private const val TAG = "PageRasterizer"
 
-    private const val DPI = 203
+    /** Fixed by CSS, not by any printer. */
+    private const val CSS_PX_PER_INCH = 96
+
+    /** Advisory: affects how the WebView rasterises images into the PDF, not the layout. */
+    private const val RENDER_RESOLUTION_DPI = 300
 
     /**
      * Paper is a continuous roll, which no page size can express, so content is laid out on a tall
@@ -62,11 +69,18 @@ object PageRasterizer {
             PrintAttributes.MediaSize(
                 "freekiosk_receipt",
                 "Receipt roll",
-                widthDots * 1000 / DPI,
+                widthDots * 1000 / CSS_PX_PER_INCH,
                 PAGE_HEIGHT_MILS,
             ),
         )
-        .setResolution(PrintAttributes.Resolution("thermal", "Thermal", DPI, DPI))
+        .setResolution(
+            PrintAttributes.Resolution(
+                "thermal",
+                "Thermal",
+                RENDER_RESOLUTION_DPI,
+                RENDER_RESOLUTION_DPI,
+            ),
+        )
         .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
         .setColorMode(PrintAttributes.COLOR_MODE_MONOCHROME)
         .build()
