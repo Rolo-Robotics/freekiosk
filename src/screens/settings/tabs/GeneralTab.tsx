@@ -17,6 +17,7 @@ import {
   ScheduleEventList,
   ManagedAppsSection,
   SettingsRadioGroup,
+  ThermalPrinterSection,
 } from '../../../components/settings';
 import { ManagedApp } from '../../../types/managedApps';
 import Icon from '../../../components/Icon';
@@ -86,6 +87,16 @@ interface GeneralTabProps {
   onPrintEnabledChange: (value: boolean) => void;
   printPaperSize: string;
   onPrintPaperSizeChange: (value: string) => void;
+  printDestination: string;
+  onPrintDestinationChange: (value: string) => void;
+  thermalWidthDots: number;
+  onThermalWidthDotsChange: (value: number) => void;
+  thermalCut: boolean;
+  onThermalCutChange: (value: boolean) => void;
+  thermalFeedLines: number;
+  onThermalFeedLinesChange: (value: number) => void;
+  thermalOrigins: string;
+  onThermalOriginsChange: (value: string) => void;
   
   // URL Rotation (webview only)
   urlRotationEnabled: boolean;
@@ -204,6 +215,16 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onPrintEnabledChange,
   printPaperSize,
   onPrintPaperSizeChange,
+  printDestination,
+  onPrintDestinationChange,
+  thermalWidthDots,
+  onThermalWidthDotsChange,
+  thermalCut,
+  onThermalCutChange,
+  thermalFeedLines,
+  onThermalFeedLinesChange,
+  thermalOrigins,
+  onThermalOriginsChange,
   urlRotationEnabled,
   onUrlRotationEnabledChange,
   urlRotationList,
@@ -975,6 +996,33 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
             <>
               <View style={styles.rotationSpacer} />
               <SettingsRadioGroup
+                label="Print Destination"
+                options={[
+                  { value: 'dialog',  label: 'Android print dialog' },
+                  { value: 'thermal', label: 'Thermal receipt printer (silent)' },
+                ]}
+                value={printDestination}
+                onValueChange={onPrintDestinationChange}
+              />
+            </>
+          )}
+
+          {printEnabled && printDestination === 'thermal' && (
+            <ThermalPrinterSection
+              widthDots={thermalWidthDots}
+              onWidthDotsChange={onThermalWidthDotsChange}
+              cut={thermalCut}
+              onCutChange={onThermalCutChange}
+              feedLines={thermalFeedLines}
+              onFeedLinesChange={onThermalFeedLinesChange}
+              origins={thermalOrigins}
+              onOriginsChange={onThermalOriginsChange}
+            />
+          )}
+
+          {printEnabled && printDestination !== 'thermal' && (
+            <>
+              <SettingsRadioGroup
                 label="Default Paper Size"
                 options={[
                   { value: 'A4',     label: 'A4 (210 × 297 mm)' },
@@ -986,17 +1034,15 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
                 value={printPaperSize}
                 onValueChange={onPrintPaperSizeChange}
               />
-            </>
-          )}
 
-          {printEnabled && (
-            <SettingsInfoBox variant="info">
-              <Text style={styles.infoText}>
-                {'Web pages can trigger the Android print dialog via window.print().\n\n'}
-                {'In Device Owner (kiosk) mode, the system print spooler is automatically whitelisted to allow the print dialog to appear.\n\n'}
-                {'Supports WiFi, Bluetooth, USB printers, and Save as PDF.'}
-              </Text>
-            </SettingsInfoBox>
+              <SettingsInfoBox variant="info">
+                <Text style={styles.infoText}>
+                  {'Web pages can trigger the Android print dialog via window.print().\n\n'}
+                  {'In Device Owner (kiosk) mode, the system print spooler is automatically whitelisted to allow the print dialog to appear.\n\n'}
+                  {'Supports WiFi, Bluetooth, USB printers, and Save as PDF.'}
+                </Text>
+              </SettingsInfoBox>
+            </>
           )}
         </SettingsSection>
       )}
