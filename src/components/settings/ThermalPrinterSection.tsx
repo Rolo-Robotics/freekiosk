@@ -138,7 +138,6 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
         {status?.paper === 'unknown' && state === 'ready' && (
           <Text style={styles.detailMuted}>This printer does not report paper level.</Text>
         )}
-        <Text style={styles.detailMuted}>Printing {widthDots} dots wide</Text>
 
         <View style={styles.actions}>
           <SettingsButton
