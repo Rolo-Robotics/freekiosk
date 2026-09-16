@@ -172,7 +172,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
 
       <SettingsSlider
         label="Feed after printing"
-        hint="Blank lines fed after a print job"
+        hint="Blank lines fed after each print job"
         value={feedLines}
         onValueChange={onFeedLinesChange}
         minimumValue={0}
@@ -183,7 +183,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
 
       <SettingsSwitch
         label="Cut paper"
-        hint="Only for printers with a cutter; harmless but pointless on those without"
+        hint="Automatically cut after each print job (does not affect printers without cutters)"
         value={cut}
         onValueChange={onCutChange}
       />
