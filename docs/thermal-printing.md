@@ -44,7 +44,7 @@ product id if Android does not offer FreeKiosk when it is plugged in.
 1. Plug the printer into the adapter and switch it on.
 2. Android asks which app should open the device. Choose **FreeKiosk** and tick **Always open**.
 3. Go to **Settings > General > Printing**.
-4. Turn on **Allow Printing**, then set **Print Destination** to **Thermal printer**.
+4. Turn on **Allow Printing**, then set **Print Destination** to **Silent Print**.
 5. Check the status card names your printer, then tap **Print test page**.
 
 > [!WARNING]
@@ -87,7 +87,7 @@ background images, and text large enough to stay legible at one dot per pixel.
 
 ## The JavaScript API
 
-`window.FreeKiosk.printer` is injected when the thermal destination is selected. Use it when a page
+`window.FreeKiosk.printer` is injected when **Silent Print** is selected. Use it when a page
 needs to know the outcome — `window.print()` cannot report that the paper ran out.
 
 ```js

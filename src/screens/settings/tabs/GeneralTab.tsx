@@ -17,6 +17,7 @@ import {
   ScheduleEventList,
   ManagedAppsSection,
   SettingsRadioGroup,
+  SettingsDropdown,
   ThermalPrinterSection,
 } from '../../../components/settings';
 import { ManagedApp } from '../../../types/managedApps';
@@ -995,11 +996,19 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           {printEnabled && (
             <>
               <View style={styles.rotationSpacer} />
-              <SettingsRadioGroup
+              <SettingsDropdown
                 label="Print Destination"
                 options={[
-                  { value: 'dialog',  label: 'Android print dialog' },
-                  { value: 'thermal', label: 'Thermal printer (silent)' },
+                  {
+                    value: 'dialog',
+                    label: 'Print Dialog',
+                    description: 'Opens a print dialog box on window.print()',
+                  },
+                  {
+                    value: 'thermal',
+                    label: 'Silent Print',
+                    description: 'Automatically starts printing based on pre-configured settings on window.print()',
+                  },
                 ]}
                 value={printDestination}
                 onValueChange={onPrintDestinationChange}
