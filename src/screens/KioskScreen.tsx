@@ -217,7 +217,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [printDestination, setPrintDestination] = useState<string>('dialog');
   const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
   const [thermalCut, setThermalCut] = useState<boolean>(false);
-  const [thermalFeedLines, setThermalFeedLines] = useState<number>(4);
+  const [thermalFeedLines, setThermalFeedLines] = useState<number>(0);
   const [thermalOrigins, setThermalOrigins] = useState<string>('');
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [zoomMode, setZoomMode] = useState<string>('standard');
@@ -1922,7 +1922,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       setPrintDestination(str(K.PRINT_DESTINATION) ?? 'dialog');
       setThermalWidthDots(num(K.THERMAL_WIDTH_DOTS, 384));
       setThermalCut(bool(K.THERMAL_CUT, false));
-      setThermalFeedLines(num(K.THERMAL_FEED_LINES, 4));
+      setThermalFeedLines(num(K.THERMAL_FEED_LINES, 0));
       setThermalOrigins(str(K.THERMAL_ORIGINS) ?? '');
       
       // Load WebView Zoom Level

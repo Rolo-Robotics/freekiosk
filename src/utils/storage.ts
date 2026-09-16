@@ -2368,10 +2368,10 @@ export const StorageService = {
     try {
       const value = await AsyncStorage.getItem(KEYS.THERMAL_FEED_LINES);
       const parsed = value ? parseInt(value, 10) : NaN;
-      return Number.isFinite(parsed) ? parsed : 4;
+      return Number.isFinite(parsed) ? parsed : 0;
     } catch (error) {
       console.error('Error getting thermal feed lines:', error);
-      return 4;
+      return 0;
     }
   },
 
@@ -3278,7 +3278,7 @@ export const StorageService = {
         printDestination: str(KEYS.PRINT_DESTINATION, 'dialog'),
         thermalWidthDots: num(KEYS.THERMAL_WIDTH_DOTS, 384),
         thermalCut: bool(KEYS.THERMAL_CUT),
-        thermalFeedLines: num(KEYS.THERMAL_FEED_LINES, 4),
+        thermalFeedLines: num(KEYS.THERMAL_FEED_LINES, 0),
         thermalOrigins: str(KEYS.THERMAL_ORIGINS, ''),
         urlRotation: {
           enabled: bool(KEYS.URL_ROTATION_ENABLED),

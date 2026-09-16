@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream
 data class PrintOptions(
     /** 384 dots = 58mm paper, 576 = 80mm, both at 203dpi. */
     val widthDots: Int = 384,
-    val feedLines: Int = 4,
+    val feedLines: Int = 0,
     val cut: Boolean = false,
     val threshold: Int = MonoBitmap.DEFAULT_THRESHOLD,
 )

@@ -175,13 +175,13 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
 
       <SettingsSlider
         label="Feed after printing"
-        hint="Blank lines fed so the last line clears the tear bar"
+        hint="Blank lines fed after a receipt, if the printer does not advance far enough by itself"
         value={feedLines}
         onValueChange={onFeedLinesChange}
         minimumValue={0}
         maximumValue={10}
         step={1}
-        unit=" lines"
+        formatValue={(value) => `${Math.round(value)} lines`}
       />
 
       <SettingsSwitch
