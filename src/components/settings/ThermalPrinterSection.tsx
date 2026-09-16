@@ -8,10 +8,10 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 
 import Icon from '../Icon';
 import { Colors, FontSizes, Spacing } from '../../theme';
-import ThermalPrintModule, {
+import SilentPrintModule, {
   DEFAULT_THERMAL_WIDTH_DOTS,
-  type ThermalPrinterStatus,
-} from '../../utils/ThermalPrintModule';
+  type PrinterStatus,
+} from '../../utils/SilentPrintModule';
 import SettingsButton from './SettingsButton';
 import SettingsInfoBox from './SettingsInfoBox';
 import SettingsInput from './SettingsInput';
@@ -29,7 +29,7 @@ interface ThermalPrinterSectionProps {
   onOriginsChange: (value: string) => void;
 }
 
-const STATE_LABELS: Record<ThermalPrinterStatus['state'], string> = {
+const STATE_LABELS: Record<PrinterStatus['state'], string> = {
   ready: 'Ready',
   no_printer: 'No printer detected',
   no_permission: 'Access not granted',
@@ -56,19 +56,19 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
   origins,
   onOriginsChange,
 }) => {
-  const [status, setStatus] = useState<ThermalPrinterStatus | null>(null);
+  const [status, setStatus] = useState<PrinterStatus | null>(null);
   const [checking, setChecking] = useState(false);
   const [printing, setPrinting] = useState(false);
 
-  const refresh = useCallback(async (): Promise<ThermalPrinterStatus> => {
+  const refresh = useCallback(async (): Promise<PrinterStatus> => {
     setChecking(true);
     try {
-      const next = await ThermalPrintModule.status();
+      const next = await SilentPrintModule.status();
       setStatus(next);
       return next;
     } catch (error) {
       console.error('[ThermalPrinter] Status failed:', error);
-      const failed: ThermalPrinterStatus = { state: 'error', paper: 'unknown', printer: null };
+      const failed: PrinterStatus = { state: 'error', paper: 'unknown', printer: null };
       setStatus(failed);
       return failed;
     } finally {
@@ -82,7 +82,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
 
   const handleGrantAccess = async () => {
     try {
-      await ThermalPrintModule.requestPermission();
+      await SilentPrintModule.requestPermission();
       // Judged on the printer's actual state, not on what the request reported.
       const next = await refresh();
       if (next.state === 'no_permission') {
@@ -99,7 +99,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
   const handleTestPage = async () => {
     setPrinting(true);
     try {
-      await ThermalPrintModule.printTestPage({ widthDots, cut, feedLines });
+      await SilentPrintModule.printTestPage({ widthDots, cut, feedLines });
     } catch (error: any) {
       const message = ERROR_MESSAGES[error?.code] ?? error?.message ?? 'Unknown error';
       Alert.alert('Test page failed', message);
@@ -193,7 +193,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
         hint="Optional. Sites that may print via window.FreeKiosk.printer, one per line. Leave empty to allow whatever the kiosk is displaying."
         value={origins}
         onChangeText={onOriginsChange}
-        placeholder="https://shop.example.com"
+        placeholder="https://app.example.com"
         multiline
         autoCapitalize="none"
       />

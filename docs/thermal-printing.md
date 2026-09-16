@@ -2,7 +2,7 @@
 
 # FreeKiosk Thermal Printing
 
-**Silent receipt printing from a web page, with no print dialog**
+**Silent printing from a web page to a thermal printer, with no print dialog**
 
 <p>
   <a href="README.md">Docs Home</a> •
@@ -28,7 +28,8 @@
 
 ## What You Need
 
-- A USB receipt printer that speaks **ESC/POS**, which nearly all do.
+- A USB thermal printer that speaks **ESC/POS**, the most common thermal printer command set. Printers
+  that speak only a label language such as ZPL or TSPL are not supported.
 - A USB-C adapter with a **power passthrough** port, so the tablet charges while the printer is
   attached.
 
@@ -43,7 +44,7 @@ product id if Android does not offer FreeKiosk when it is plugged in.
 1. Plug the printer into the adapter and switch it on.
 2. Android asks which app should open the device. Choose **FreeKiosk** and tick **Always open**.
 3. Go to **Settings > General > Printing**.
-4. Turn on **Allow Printing**, then set **Print Destination** to **Thermal receipt printer**.
+4. Turn on **Allow Printing**, then set **Print Destination** to **Thermal printer**.
 5. Check the status card names your printer, then tap **Print test page**.
 
 > [!WARNING]
@@ -94,7 +95,7 @@ window.addEventListener('freekiosk:ready', async () => {
   const { state, paper, printer } = await window.FreeKiosk.printer.status();
   if (state !== 'ready') return;
 
-  await window.FreeKiosk.printer.printPage('Order 1234');
+  await window.FreeKiosk.printer.printPage('Test print');
 });
 ```
 
@@ -125,12 +126,13 @@ kiosk displays may print, which is what `window.print()` has always done.
 | Status shows **Access not granted** | Tap **Grant access**. If the printer was already plugged in when FreeKiosk was installed, Android never offered the "Always open" choice — unplug and replug it once to get that prompt |
 | Ruler wraps, or leaves a wide margin | Wrong **Print width**. Check the dot width in the printer's specification |
 | Nothing prints, no error | Printer is out of paper but has no sensor. Check the roll |
-| A long blank strip after each receipt | Reduce **Feed after printing** |
+| A long blank strip after each print | Reduce **Feed after printing** |
 | `PAGE_RENDER_FAILED` | The page could not be rendered. Have the page render its own bitmap and call `printImage` instead |
 
 
 ## Limitations
 
 - USB only. Bluetooth and network printers are not supported yet.
-- The command set is ESC/POS. Star's own graphics mode is not implemented.
+- The command set is ESC/POS. Label languages (ZPL, TSPL, EPL) and Star's own graphics mode are not
+  implemented.
 - Paper level is reported only by printers implementing the USB Printer Class status request.

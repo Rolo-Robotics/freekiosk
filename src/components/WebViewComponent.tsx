@@ -22,7 +22,7 @@ import { WebView } from 'react-native-webview';
 import type { WebViewErrorEvent, ShouldStartLoadRequest, WebViewRenderProcessGoneEvent } from 'react-native-webview/lib/WebViewTypes';
 import { useNavigation } from '@react-navigation/native';
 import PrintModule from '../utils/PrintModule';
-import ThermalPrintModule from '../utils/ThermalPrintModule';
+import SilentPrintModule from '../utils/SilentPrintModule';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -48,7 +48,7 @@ interface WebViewComponentProps {
   thermalWidthDots?: number; // Printable width in dots
   thermalCut?: boolean;
   thermalFeedLines?: number;
-  thermalOrigins?: string; // Origins allowed to use window.FreeKiosk.printer; empty = any
+  printOrigins?: string; // Origins allowed to use window.FreeKiosk.printer; empty = any
   zoomLevel?: number; // Zoom level percentage (50-200, default 100)
   zoomMode?: string; // 'standard' (CSS zoom) | 'fit' (viewport reflow, #188)
   disableUserZoom?: boolean; // Prevent pinch-to-zoom and double-tap zoom
@@ -92,7 +92,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   thermalWidthDots = 384,
   thermalCut = false,
   thermalFeedLines = 0,
-  thermalOrigins = '',
+  printOrigins = '',
   zoomLevel = 100,
   zoomMode = 'standard',
   disableUserZoom = false,
@@ -780,7 +780,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
 
   /** Empty allow-list means any displayed page may print, as window.print() always has. */
   const printerOriginAllowed = (pageUrl?: string): boolean => {
-    const allowed = thermalOrigins
+    const allowed = printOrigins
       .split(/[\s,]+/)
       .map((entry) => entry.trim().replace(/\/$/, ''))
       .filter(Boolean);
@@ -809,13 +809,13 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     let work: Promise<unknown>;
     switch (data.op) {
       case 'status':
-        work = ThermalPrintModule.status();
+        work = SilentPrintModule.status();
         break;
       case 'printPage':
-        work = ThermalPrintModule.printPage(payload.jobName ?? null, options);
+        work = SilentPrintModule.printPage(payload.jobName ?? null, options);
         break;
       case 'printImage':
-        work = ThermalPrintModule.printImage(payload.base64 ?? '', options);
+        work = SilentPrintModule.printImage(payload.base64 ?? '', options);
         break;
       default:
         fail('UNKNOWN_OP', `Unknown printer operation: ${data.op}`);
@@ -1138,7 +1138,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
             return false;
           }
           
-          // data: URLs - allow when printing is enabled (some label/receipt sites
+          // data: URLs - allow when printing is enabled (some label/thermal printing sites
           // generate print content as data:text/html popups)
           if (urlLower.startsWith('data:')) {
             if (printEnabled) {

@@ -2,7 +2,7 @@ import { NativeModules } from 'react-native';
 
 export const DEFAULT_THERMAL_WIDTH_DOTS = 384;
 
-export type ThermalPrinterState =
+export type PrinterState =
   | 'ready'
   | 'no_printer'
   | 'no_permission'
@@ -10,9 +10,9 @@ export type ThermalPrinterState =
   | 'error';
 
 /** 'unknown' means the printer reports no paper sensor, which is common. */
-export type ThermalPaperState = 'ok' | 'out' | 'unknown';
+export type PaperState = 'ok' | 'out' | 'unknown';
 
-export interface ThermalPrinterInfo {
+export interface PrinterInfo {
   transport: string;
   name: string;
   manufacturer: string | null;
@@ -21,10 +21,10 @@ export interface ThermalPrinterInfo {
   hardwareId: string | null;
 }
 
-export interface ThermalPrinterStatus {
-  state: ThermalPrinterState;
-  paper: ThermalPaperState;
-  printer: ThermalPrinterInfo | null;
+export interface PrinterStatus {
+  state: PrinterState;
+  paper: PaperState;
+  printer: PrinterInfo | null;
 }
 
 export interface ThermalPrintOptions {
@@ -34,8 +34,8 @@ export interface ThermalPrintOptions {
   threshold?: number;
 }
 
-interface ThermalPrintModuleType {
-  status(): Promise<ThermalPrinterStatus>;
+interface SilentPrintModuleType {
+  status(): Promise<PrinterStatus>;
   /** Grants only until the printer is unplugged; see UsbPrinterAttachActivity for the durable route. */
   requestPermission(): Promise<boolean>;
   printPage(jobName: string | null, options: ThermalPrintOptions | null): Promise<boolean>;
@@ -43,6 +43,6 @@ interface ThermalPrintModuleType {
   printTestPage(options: ThermalPrintOptions | null): Promise<boolean>;
 }
 
-const ThermalPrintModule: ThermalPrintModuleType = NativeModules.ThermalPrintModule;
+const SilentPrintModule: SilentPrintModuleType = NativeModules.SilentPrintModule;
 
-export default ThermalPrintModule;
+export default SilentPrintModule;

@@ -1,7 +1,7 @@
 package com.freekiosk.printing
 
 /**
- * A way to reach a receipt printer and push encoded bytes at it.
+ * A way to reach a printer and push encoded bytes at it.
  * Implementations cover the connection only; encoding belongs to [RasterDriver].
  */
 interface PrinterTransport {

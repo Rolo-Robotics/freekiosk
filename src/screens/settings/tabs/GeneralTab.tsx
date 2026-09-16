@@ -95,8 +95,8 @@ interface GeneralTabProps {
   onThermalCutChange: (value: boolean) => void;
   thermalFeedLines: number;
   onThermalFeedLinesChange: (value: number) => void;
-  thermalOrigins: string;
-  onThermalOriginsChange: (value: string) => void;
+  printOrigins: string;
+  onPrintOriginsChange: (value: string) => void;
   
   // URL Rotation (webview only)
   urlRotationEnabled: boolean;
@@ -223,8 +223,8 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onThermalCutChange,
   thermalFeedLines,
   onThermalFeedLinesChange,
-  thermalOrigins,
-  onThermalOriginsChange,
+  printOrigins,
+  onPrintOriginsChange,
   urlRotationEnabled,
   onUrlRotationEnabledChange,
   urlRotationList,
@@ -987,7 +987,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
         <SettingsSection title="Printing" icon="printer">
           <SettingsSwitch
             label="Allow Printing"
-            hint="Enable window.print() support for web pages (label printers, receipts, etc.)"
+            hint="Enable window.print() support for web pages (label printers, thermal printers, etc.)"
             value={printEnabled}
             onValueChange={onPrintEnabledChange}
           />
@@ -999,7 +999,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
                 label="Print Destination"
                 options={[
                   { value: 'dialog',  label: 'Android print dialog' },
-                  { value: 'thermal', label: 'Thermal receipt printer (silent)' },
+                  { value: 'thermal', label: 'Thermal printer (silent)' },
                 ]}
                 value={printDestination}
                 onValueChange={onPrintDestinationChange}
@@ -1015,8 +1015,8 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
               onCutChange={onThermalCutChange}
               feedLines={thermalFeedLines}
               onFeedLinesChange={onThermalFeedLinesChange}
-              origins={thermalOrigins}
-              onOriginsChange={onThermalOriginsChange}
+              origins={printOrigins}
+              onOriginsChange={onPrintOriginsChange}
             />
           )}
 

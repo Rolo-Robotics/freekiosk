@@ -124,10 +124,11 @@ export const KEYS = {
   PRINT_PAPER_SIZE: '@kiosk_print_paper_size',
   // 'dialog' (Android print framework) | 'thermal' (silent ESC/POS)
   PRINT_DESTINATION: '@kiosk_print_destination',
+  // Origins allowed to use window.FreeKiosk.printer; empty = any
+  PRINT_ORIGINS: '@kiosk_print_origins',
   THERMAL_WIDTH_DOTS: '@kiosk_thermal_width_dots',
   THERMAL_CUT: '@kiosk_thermal_cut',
   THERMAL_FEED_LINES: '@kiosk_thermal_feed_lines',
-  THERMAL_ORIGINS: '@kiosk_thermal_origins',
   // WebView Zoom Level
   WEBVIEW_ZOOM_LEVEL: '@kiosk_webview_zoom_level',
   // WebView Zoom Mode ('standard' = CSS zoom | 'fit' = viewport reflow, #188)
@@ -523,7 +524,7 @@ export const StorageService = {
         KEYS.THERMAL_WIDTH_DOTS,
         KEYS.THERMAL_CUT,
         KEYS.THERMAL_FEED_LINES,
-        KEYS.THERMAL_ORIGINS,
+        KEYS.PRINT_ORIGINS,
         // WebView Zoom Level
         KEYS.WEBVIEW_ZOOM_LEVEL,
         KEYS.WEBVIEW_ZOOM_MODE,
@@ -2375,19 +2376,19 @@ export const StorageService = {
     }
   },
 
-  saveThermalOrigins: async (value: string): Promise<void> => {
+  savePrintOrigins: async (value: string): Promise<void> => {
     try {
-      await AsyncStorage.setItem(KEYS.THERMAL_ORIGINS, value);
+      await AsyncStorage.setItem(KEYS.PRINT_ORIGINS, value);
     } catch (error) {
-      console.error('Error saving thermal origins:', error);
+      console.error('Error saving print origins:', error);
     }
   },
 
-  getThermalOrigins: async (): Promise<string> => {
+  getPrintOrigins: async (): Promise<string> => {
     try {
-      return (await AsyncStorage.getItem(KEYS.THERMAL_ORIGINS)) || '';
+      return (await AsyncStorage.getItem(KEYS.PRINT_ORIGINS)) || '';
     } catch (error) {
-      console.error('Error getting thermal origins:', error);
+      console.error('Error getting print origins:', error);
       return '';
     }
   },
@@ -3279,7 +3280,7 @@ export const StorageService = {
         thermalWidthDots: num(KEYS.THERMAL_WIDTH_DOTS, 384),
         thermalCut: bool(KEYS.THERMAL_CUT),
         thermalFeedLines: num(KEYS.THERMAL_FEED_LINES, 0),
-        thermalOrigins: str(KEYS.THERMAL_ORIGINS, ''),
+        printOrigins: str(KEYS.PRINT_ORIGINS, ''),
         urlRotation: {
           enabled: bool(KEYS.URL_ROTATION_ENABLED),
           list: json(KEYS.URL_ROTATION_LIST, []),
@@ -3484,7 +3485,7 @@ export const StorageService = {
       set(KEYS.THERMAL_WIDTH_DOTS, g.thermalWidthDots);
       set(KEYS.THERMAL_CUT, g.thermalCut);
       set(KEYS.THERMAL_FEED_LINES, g.thermalFeedLines);
-      set(KEYS.THERMAL_ORIGINS, g.thermalOrigins);
+      set(KEYS.PRINT_ORIGINS, g.printOrigins);
       const ur = g.urlRotation as Record<string, unknown> | undefined;
       if (ur) {
         set(KEYS.URL_ROTATION_ENABLED, ur.enabled);

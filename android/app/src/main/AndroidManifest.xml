@@ -143,7 +143,7 @@
         </intent-filter>
       </activity>
 
-      <!-- USB receipt printer. Declaring this filter is what lets Android offer "always open for
+      <!-- USB printer. Declaring this filter is what lets Android offer "always open for
            this device", the only USB grant that survives an unplug or a reboot. -->
       <activity
         android:name="com.freekiosk.printing.UsbPrinterAttachActivity"

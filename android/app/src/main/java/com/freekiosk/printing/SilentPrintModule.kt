@@ -14,10 +14,10 @@ import com.freekiosk.DebugLog
 import java.util.concurrent.Executors
 
 /**
- * ThermalPrintModule - Silent printing to a receipt printer
+ * SilentPrintModule - Printing with no print dialog
  *
  * Android's print framework always shows the system print dialog, so an unattended kiosk cannot
- * use it. This drives the printer directly instead.
+ * use it. This drives a thermal printer directly instead.
  *
  * Features:
  * - Print the current WebView page through its print stylesheet
@@ -27,11 +27,11 @@ import java.util.concurrent.Executors
  *
  * Settings live in JS and travel with each call, so nothing is configured in two places.
  */
-class ThermalPrintModule(reactContext: ReactApplicationContext) :
+class SilentPrintModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
     companion object {
-        const val NAME = "ThermalPrintModule"
+        const val NAME = "SilentPrintModule"
 
         private const val MAX_IMAGE_BYTES = 8 * 1024 * 1024
     }
@@ -82,7 +82,7 @@ class ThermalPrintModule(reactContext: ReactApplicationContext) :
                 val image = PageRasterizer.rasterize(
                     reactApplicationContext,
                     webView,
-                    jobName?.takeIf { it.isNotBlank() } ?: "FreeKiosk receipt",
+                    jobName?.takeIf { it.isNotBlank() } ?: "FreeKiosk print",
                     opts,
                 )
                 transport.write(driver.encode(image, opts))

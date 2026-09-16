@@ -8,7 +8,7 @@ import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.freekiosk.api.HttpServerPackage
 import com.freekiosk.mqtt.MqttPackage
-import com.freekiosk.printing.ThermalPrintPackage
+import com.freekiosk.printing.SilentPrintPackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -34,7 +34,7 @@ class MainApplication : Application(), ReactApplication {
           add(BlockingOverlayPackage())
           add(AutoBrightnessPackage())
           add(PrintPackage())
-          add(ThermalPrintPackage())
+          add(SilentPrintPackage())
           add(AccessibilityPackage())
           add(FilePickerPackage())
           add(WifiControlPackage())

@@ -41,7 +41,7 @@ object PageRasterizer {
 
     /**
      * Paper is a continuous roll, which no page size can express, so content is laid out on a tall
-     * page and the blank remainder cropped. Longer receipts paginate and are stitched back together.
+     * page and the blank remainder cropped. Longer prints paginate and are stitched back together.
      */
     private const val PAGE_HEIGHT_MILS = 11_000
 
@@ -67,8 +67,8 @@ object PageRasterizer {
         .setMediaSize(
             // Margins are zero, so the media width is the printable width.
             PrintAttributes.MediaSize(
-                "freekiosk_receipt",
-                "Receipt roll",
+                "freekiosk_thermal_roll",
+                "Thermal roll",
                 widthDots * 1000 / CSS_PX_PER_INCH,
                 PAGE_HEIGHT_MILS,
             ),

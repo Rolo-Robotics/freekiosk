@@ -16,7 +16,7 @@ import androidx.core.content.ContextCompat
 import com.freekiosk.DebugLog
 
 /**
- * USB receipt printers, over the USB Printer Class (07h).
+ * USB printers, over the USB Printer Class (07h).
  *
  * Targeting the class rather than a list of vendor ids is what makes unfamiliar printers work.
  * Vendor-class interfaces are driven too, through the bulk OUT fallback, but answer no status.
@@ -117,7 +117,7 @@ class UsbPrinterTransport(private val context: Context) : PrinterTransport {
                 throw PrinterException(PrinterException.OPEN_FAILED, "Could not claim the printer interface")
             }
             // Before writing, not after: a printer out of paper swallows the job silently, and
-            // reporting success would be a lie the web app shows its customer.
+            // reporting success would be a lie the web app passes on to whoever is waiting for it.
             if (readPaperState(connection, target) == PaperState.OUT) {
                 throw PrinterException(PrinterException.PAPER_OUT, "The printer is out of paper")
             }
