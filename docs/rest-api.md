@@ -1003,6 +1003,44 @@ rest_command:
     payload: '{"text": "{{ text }}"}'
 ```
 
+### Switches with state
+
+A `rest_command` is a *service*, not an entity: calling it works, but it has nothing to
+show, which is why the commands above give you buttons and never a toggle that reflects
+what the tablet is actually doing. Pair one with the matching sensor from **Basic
+Sensors** above and you get a real switch.
+
+```yaml
+template:
+  - switch:
+      - name: "Tablet screen"
+        state: "{{ is_state('binary_sensor.tablet_screen', 'on') }}"
+        turn_on:
+          service: rest_command.tablet_screen_on
+        turn_off:
+          service: rest_command.tablet_screen_off
+
+      - name: "Tablet screensaver"
+        state: "{{ is_state('binary_sensor.tablet_screensaver', 'on') }}"
+        turn_on:
+          service: rest_command.tablet_screensaver_on
+        turn_off:
+          service: rest_command.tablet_screensaver_off
+```
+
+`binary_sensor.tablet_screen` reads `screen.on`, which is the **physical** screen state
+from `PowerManager`, while `screen.screensaverActive` is separate: the screensaver is an
+overlay drawn by the app, so it can be showing while the panel is still on. That is why
+they are two switches and not one.
+
+> ⚠️ **REST state is polled, MQTT state is pushed.** The sensors above use
+> `scan_interval: 30`, so a switch built this way can be up to 30 seconds behind the
+> tablet, including right after you flip it yourself. Lowering `scan_interval` shortens
+> the lag and costs one HTTP request per tablet per interval. If you want a toggle that
+> updates the instant the tablet changes, use MQTT instead: it publishes on the real
+> `ACTION_SCREEN_ON` / `ACTION_SCREEN_OFF` broadcast and Home Assistant discovers the
+> entities on its own. See [MQTT](MQTT). The two can coexist on the same tablet.
+
 ### Screenshot Camera
 
 ```yaml
