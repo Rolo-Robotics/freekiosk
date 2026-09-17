@@ -350,6 +350,33 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   // Keep the ref above in step with the state it mirrors.
   useEffect(() => { displayModeRef.current = displayMode; }, [displayMode]);
 
+  /**
+   * The settings that only exist inside the WebView's injectedJavaScript.
+   *
+   * React Native runs injectedJavaScript once per page load, not when the prop
+   * changes, so a config pushed from the cloud updated storage and state while the
+   * rendered page kept the old zoom, the old pinch-to-zoom rule and the old keyboard
+   * mode. Everything handled natively or through a React prop applied immediately,
+   * which is why only *some* settings looked ignored. Reported by a beta tester who
+   * applied a profile to a second tablet and found the zoom and the numeric keyboard
+   * untouched.
+   *
+   * Remounting the WebView re-runs the script. It also reloads the page, so it is done
+   * only when one of these four actually changed rather than on every config push,
+   * which would reload the kiosk every time the cloud syncs.
+   */
+  const injectedWebViewSettingsRef = useRef<string>('');
+
+  const readInjectedWebViewSettings = useCallback(async (): Promise<string> => {
+    const [level, mode, disableZoom, keyboard] = await Promise.all([
+      StorageService.getWebViewZoomLevel(),
+      StorageService.getWebViewZoomMode(),
+      StorageService.getDisableUserZoom(),
+      StorageService.getKeyboardMode(),
+    ]);
+    return JSON.stringify([level, mode, disableZoom, keyboard]);
+  }, []);
+
   // Cloud sync: start heartbeat loop on mount, reload settings on config push
   useEffect(() => {
     DeviceControlService.registerWebViewCallbacks(
@@ -366,10 +393,27 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       })();
     }
 
+    // Seed the signature so the first push compares against what is on screen now,
+    // not against an empty string that would remount for nothing.
+    readInjectedWebViewSettings()
+      .then(value => { injectedWebViewSettingsRef.current = value; })
+      .catch(() => {});
+
     const onConfigUpdated = CLOUD_ENABLED
       ? DeviceEventEmitter.addListener(CONFIG_UPDATED_EVENT, async () => {
           const previousMode = displayModeRef.current;
+          const previousInjected = injectedWebViewSettingsRef.current;
           await loadSettings();
+
+          // Storage already holds the pushed values by the time this event fires, so
+          // this reads the new ones and compares them with what the mounted page was
+          // built from. See injectedWebViewSettingsRef.
+          const nextInjected = await readInjectedWebViewSettings();
+          injectedWebViewSettingsRef.current = nextInjected;
+          if (previousInjected && previousInjected !== nextInjected) {
+            console.log('[KioskScreen] Injected WebView settings changed, remounting');
+            setWebViewKey(k => k + 1);
+          }
 
           // A pushed config that leaves external_app mode needs us back in front. The
           // launched app owns the screen and lives in its own task, so loadSettings()
