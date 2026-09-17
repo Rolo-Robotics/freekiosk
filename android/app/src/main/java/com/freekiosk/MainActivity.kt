@@ -1012,10 +1012,12 @@ class MainActivity : ReactActivity() {
         }
       }
 
-      // If a print dialog was active, reset the flag now that focus has returned
+      // Focus is back while a print job is still live. That is NOT the dialog closing:
+      // clearing the flag here is what used to let the next focus loss re-enter lock
+      // task over an open printer selection. PrintModule now reads the job's own state,
+      // so this only defers immersive mode and leaves the flag alone.
       if (PrintModule.isPrintActive) {
-        DebugLog.d("MainActivity", "Print dialog closed — resetting isPrintActive, deferring immersive mode")
-        PrintModule.isPrintActive = false
+        DebugLog.d("MainActivity", "Focus regained with a print job live, deferring immersive mode")
         // Use a longer delay to let the print system activity fully dismiss
         hideSystemUIHandler.removeCallbacksAndMessages(null)
         hideSystemUIHandler.postDelayed({ hideSystemUI() }, 1500L)
