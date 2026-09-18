@@ -988,7 +988,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
         <SettingsSection title="Printing" icon="printer">
           <SettingsSwitch
             label="Allow Printing"
-            hint="Enable window.print() support for web pages (label printers, thermal printers, etc.)"
+            hint="Enable window.print() support for web pages (label printers, receipts, etc.)"
             value={printEnabled}
             onValueChange={onPrintEnabledChange}
           />
