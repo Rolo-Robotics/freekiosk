@@ -48,11 +48,9 @@ object TestPageRenderer {
         canvas.drawRect(0f, y, widthDots.toFloat(), y + 3f, ink)
         y += LINE_HEIGHT
 
-        canvas.drawText("Width: $widthDots dots", 0f, y, body)
-        y += LINE_HEIGHT
         canvas.drawText("Printer: ${printerName ?: "unknown"}", 0f, y, body)
         y += LINE_HEIGHT
-        canvas.drawText("Commands: ${commandSet ?: "unreported"}", 0f, y, body)
+        canvas.drawText("Width: $widthDots dots", 0f, y, body)
         y += LINE_HEIGHT
         canvas.drawText(SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.UK).format(Date()), 0f, y, body)
         y += 32f
@@ -71,7 +69,6 @@ object TestPageRenderer {
         y = drawGreyRamp(canvas, widthDots, y)
         y = drawHairlines(canvas, widthDots, y, ink)
 
-        canvas.drawText("If this is legible, printing works.", 0f, y, body)
         return bitmap
     }
 
