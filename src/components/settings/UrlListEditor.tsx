@@ -21,6 +21,9 @@ interface UrlListEditorProps {
   maxUrls?: number; // 0 or undefined = unlimited (for patterns), default 10 for URLs
   /** Pattern mode: accept wildcards (*), skip URL normalization */
   patternMode?: boolean;
+  /** Whether position means anything (rotation): shows the index and move buttons */
+  ordered?: boolean;
+  showCount?: boolean;
   placeholder?: string;
   emptyTitle?: string;
   emptyHint?: string;
@@ -31,6 +34,8 @@ const UrlListEditor: React.FC<UrlListEditorProps> = ({
   onUrlsChange,
   maxUrls = 10,
   patternMode = false,
+  ordered = true,
+  showCount = true,
   placeholder,
   emptyTitle,
   emptyHint,
@@ -135,7 +140,7 @@ const UrlListEditor: React.FC<UrlListEditorProps> = ({
           {urls.map((url, index) => (
             <View key={index} style={styles.urlItem}>
               <View style={styles.urlInfo}>
-                <Text style={styles.urlIndex}>{index + 1}</Text>
+                {ordered && <Text style={styles.urlIndex}>{index + 1}</Text>}
                 <Text style={styles.urlText} numberOfLines={1}>
                   {url.replace(/^https?:\/\//, '')}
                 </Text>
@@ -143,21 +148,25 @@ const UrlListEditor: React.FC<UrlListEditorProps> = ({
               
               <View style={styles.urlActions}>
                 {/* Move buttons */}
-                <TouchableOpacity
-                  style={[styles.actionButton, index === 0 && styles.actionButtonDisabled]}
-                  onPress={() => handleMoveUp(index)}
-                  disabled={index === 0}
-                >
-                  <Text style={styles.actionButtonText}>▲</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.actionButton, index === urls.length - 1 && styles.actionButtonDisabled]}
-                  onPress={() => handleMoveDown(index)}
-                  disabled={index === urls.length - 1}
-                >
-                  <Text style={styles.actionButtonText}>▼</Text>
-                </TouchableOpacity>
+                {ordered && (
+                  <>
+                    <TouchableOpacity
+                      style={[styles.actionButton, index === 0 && styles.actionButtonDisabled]}
+                      onPress={() => handleMoveUp(index)}
+                      disabled={index === 0}
+                    >
+                      <Text style={styles.actionButtonText}>▲</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.actionButton, index === urls.length - 1 && styles.actionButtonDisabled]}
+                      onPress={() => handleMoveDown(index)}
+                      disabled={index === urls.length - 1}
+                    >
+                      <Text style={styles.actionButtonText}>▼</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
                 
                 {/* Delete button */}
                 <TouchableOpacity
@@ -201,9 +210,11 @@ const UrlListEditor: React.FC<UrlListEditorProps> = ({
           </TouchableOpacity>
         </View>
         
-        <Text style={styles.countText}>
-          {maxUrls > 0 ? `${urls.length} / ${maxUrls} ${patternMode ? 'patterns' : 'URLs'}` : `${urls.length} ${patternMode ? 'patterns' : 'URLs'}`}
-        </Text>
+        {showCount && (
+          <Text style={styles.countText}>
+            {maxUrls > 0 ? `${urls.length} / ${maxUrls} ${patternMode ? 'patterns' : 'URLs'}` : `${urls.length} ${patternMode ? 'patterns' : 'URLs'}`}
+          </Text>
+        )}
       </View>
     </View>
   );
