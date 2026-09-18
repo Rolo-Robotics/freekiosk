@@ -44,7 +44,8 @@ product id if Android does not offer FreeKiosk when it is plugged in.
 1. Plug the printer into the adapter and switch it on.
 2. Android asks which app should open the device. Choose **FreeKiosk** and tick **Always open**.
 3. Go to **Settings > General > Printing**.
-4. Turn on **Silent Print**. It does not need **Allow Printing**, which only controls `window.print()`.
+4. Under **Silent Printing**, turn on **Enable Silent Printing**. It does not need
+   **Enable Window Printing**, which only controls `window.print()`.
 5. Check the status card names your printer, then tap **Print test page**.
 
 > [!WARNING]
@@ -65,9 +66,9 @@ the printer actually addresses, so no paper size or resolution is assumed anywhe
 Call `window.FreeKiosk.silentPrinter.print()`. The page's own print stylesheet is what lands on paper,
 including its fonts, its language and any QR codes.
 
-`window.print()` is separate and unchanged: with **Allow Printing** on it opens the Android print
-dialog, and otherwise it does nothing. A page can use both, A4 through the dialog and receipts
-through Silent Print, but both render the same `@media print` stylesheet. Switch it to the receipt
+`window.print()` is separate and unchanged: with **Enable Window Printing** on it opens the Android
+print dialog, and otherwise it does nothing. A page can use both, A4 through the dialog and receipts
+through Silent Printing, but both render the same `@media print` stylesheet. Switch it to the receipt
 layout before calling `silentPrinter.print()`, for example with a class on `<html>`, or render the receipt
 yourself and call `printImage()`.
 
@@ -93,7 +94,7 @@ background images, and text large enough to stay legible at one dot per pixel.
 
 ## The JavaScript API
 
-`window.FreeKiosk.silentPrinter` is injected when **Silent Print** is on. Every call returns a promise, so
+`window.FreeKiosk.silentPrinter` is injected when **Enable Silent Printing** is on. Every call returns a promise, so
 a page knows whether a print went through, and `getStatus()` lets it check for paper before it promises
 a ticket.
 
