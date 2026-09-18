@@ -1,6 +1,6 @@
 import { NativeModules } from 'react-native';
 
-export const DEFAULT_THERMAL_WIDTH_DOTS = 384;
+export const DEFAULT_ESC_POS_WIDTH_DOTS = 384;
 
 export type PrinterState =
   | 'ready'
@@ -27,7 +27,7 @@ export interface PrinterStatus {
   printer: PrinterInfo | null;
 }
 
-export interface ThermalPrintOptions {
+export interface EscPosPrintOptions {
   widthDots?: number;
   feedLines?: number;
   cut?: boolean;
@@ -38,9 +38,9 @@ interface SilentPrintModuleType {
   status(): Promise<PrinterStatus>;
   /** Grants only until the printer is unplugged; see UsbPrinterAttachActivity for the durable route. */
   requestPermission(): Promise<boolean>;
-  printPage(jobName: string | null, options: ThermalPrintOptions | null): Promise<boolean>;
-  printImage(base64: string, options: ThermalPrintOptions | null): Promise<boolean>;
-  printTestPage(options: ThermalPrintOptions | null): Promise<boolean>;
+  printPage(jobName: string | null, options: EscPosPrintOptions | null): Promise<boolean>;
+  printImage(base64: string, options: EscPosPrintOptions | null): Promise<boolean>;
+  printTestPage(options: EscPosPrintOptions | null): Promise<boolean>;
 }
 
 const SilentPrintModule: SilentPrintModuleType = NativeModules.SilentPrintModule;

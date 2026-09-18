@@ -122,13 +122,13 @@ export const KEYS = {
   // Printing
   PRINT_ENABLED: '@kiosk_print_enabled',
   PRINT_PAPER_SIZE: '@kiosk_print_paper_size',
-  // 'dialog' (Android print framework) | 'silent' (ESC/POS thermal printer)
+  // 'dialog' (Android print framework) | 'silent' (ESC/POS printer)
   PRINT_DESTINATION_MODE: '@kiosk_print_destination_mode',
   // Origins allowed to print in silent mode (JSON): null = any page, [] = none
   PRINT_ORIGINS: '@kiosk_print_origins',
-  THERMAL_WIDTH_DOTS: '@kiosk_thermal_width_dots',
-  THERMAL_CUT: '@kiosk_thermal_cut',
-  THERMAL_FEED_LINES: '@kiosk_thermal_feed_lines',
+  ESC_POS_WIDTH_DOTS: '@kiosk_escpos_width_dots',
+  ESC_POS_CUT: '@kiosk_escpos_cut',
+  ESC_POS_FEED_LINES: '@kiosk_escpos_feed_lines',
   // WebView Zoom Level
   WEBVIEW_ZOOM_LEVEL: '@kiosk_webview_zoom_level',
   // WebView Zoom Mode ('standard' = CSS zoom | 'fit' = viewport reflow, #188)
@@ -525,9 +525,9 @@ export const StorageService = {
         // Printing
         KEYS.PRINT_ENABLED,
         KEYS.PRINT_DESTINATION_MODE,
-        KEYS.THERMAL_WIDTH_DOTS,
-        KEYS.THERMAL_CUT,
-        KEYS.THERMAL_FEED_LINES,
+        KEYS.ESC_POS_WIDTH_DOTS,
+        KEYS.ESC_POS_CUT,
+        KEYS.ESC_POS_FEED_LINES,
         KEYS.PRINT_ORIGINS,
         // WebView Zoom Level
         KEYS.WEBVIEW_ZOOM_LEVEL,
@@ -2324,58 +2324,58 @@ export const StorageService = {
     }
   },
 
-  saveThermalWidthDots: async (value: number): Promise<void> => {
+  saveEscPosWidthDots: async (value: number): Promise<void> => {
     try {
-      await AsyncStorage.setItem(KEYS.THERMAL_WIDTH_DOTS, String(value));
+      await AsyncStorage.setItem(KEYS.ESC_POS_WIDTH_DOTS, String(value));
     } catch (error) {
-      console.error('Error saving thermal width:', error);
+      console.error('Error saving ESC/POS width:', error);
     }
   },
 
-  getThermalWidthDots: async (): Promise<number> => {
+  getEscPosWidthDots: async (): Promise<number> => {
     try {
-      const value = await AsyncStorage.getItem(KEYS.THERMAL_WIDTH_DOTS);
+      const value = await AsyncStorage.getItem(KEYS.ESC_POS_WIDTH_DOTS);
       const parsed = value ? parseInt(value, 10) : NaN;
       return Number.isFinite(parsed) ? parsed : 384;
     } catch (error) {
-      console.error('Error getting thermal width:', error);
+      console.error('Error getting ESC/POS width:', error);
       return 384;
     }
   },
 
-  saveThermalCut: async (value: boolean): Promise<void> => {
+  saveEscPosCut: async (value: boolean): Promise<void> => {
     try {
-      await AsyncStorage.setItem(KEYS.THERMAL_CUT, JSON.stringify(value));
+      await AsyncStorage.setItem(KEYS.ESC_POS_CUT, JSON.stringify(value));
     } catch (error) {
-      console.error('Error saving thermal cut:', error);
+      console.error('Error saving ESC/POS cut:', error);
     }
   },
 
-  getThermalCut: async (): Promise<boolean> => {
+  getEscPosCut: async (): Promise<boolean> => {
     try {
-      const value = await AsyncStorage.getItem(KEYS.THERMAL_CUT);
+      const value = await AsyncStorage.getItem(KEYS.ESC_POS_CUT);
       return value ? JSON.parse(value) : false;
     } catch (error) {
-      console.error('Error getting thermal cut:', error);
+      console.error('Error getting ESC/POS cut:', error);
       return false;
     }
   },
 
-  saveThermalFeedLines: async (value: number): Promise<void> => {
+  saveEscPosFeedLines: async (value: number): Promise<void> => {
     try {
-      await AsyncStorage.setItem(KEYS.THERMAL_FEED_LINES, String(value));
+      await AsyncStorage.setItem(KEYS.ESC_POS_FEED_LINES, String(value));
     } catch (error) {
-      console.error('Error saving thermal feed lines:', error);
+      console.error('Error saving ESC/POS feed lines:', error);
     }
   },
 
-  getThermalFeedLines: async (): Promise<number> => {
+  getEscPosFeedLines: async (): Promise<number> => {
     try {
-      const value = await AsyncStorage.getItem(KEYS.THERMAL_FEED_LINES);
+      const value = await AsyncStorage.getItem(KEYS.ESC_POS_FEED_LINES);
       const parsed = value ? parseInt(value, 10) : NaN;
       return Number.isFinite(parsed) ? parsed : 0;
     } catch (error) {
-      console.error('Error getting thermal feed lines:', error);
+      console.error('Error getting ESC/POS feed lines:', error);
       return 0;
     }
   },
@@ -3282,9 +3282,9 @@ export const StorageService = {
         printEnabled: bool(KEYS.PRINT_ENABLED),
         printPaperSize: str(KEYS.PRINT_PAPER_SIZE, 'A4'),
         printDestinationMode: str(KEYS.PRINT_DESTINATION_MODE, 'dialog'),
-        thermalWidthDots: num(KEYS.THERMAL_WIDTH_DOTS, 384),
-        thermalCut: bool(KEYS.THERMAL_CUT),
-        thermalFeedLines: num(KEYS.THERMAL_FEED_LINES, 0),
+        escPosWidthDots: num(KEYS.ESC_POS_WIDTH_DOTS, 384),
+        escPosCut: bool(KEYS.ESC_POS_CUT),
+        escPosFeedLines: num(KEYS.ESC_POS_FEED_LINES, 0),
         printOrigins: toPrintOrigins(json(KEYS.PRINT_ORIGINS)),
         urlRotation: {
           enabled: bool(KEYS.URL_ROTATION_ENABLED),
@@ -3487,9 +3487,9 @@ export const StorageService = {
       set(KEYS.PRINT_ENABLED, g.printEnabled);
       set(KEYS.PRINT_PAPER_SIZE, g.printPaperSize);
       set(KEYS.PRINT_DESTINATION_MODE, g.printDestinationMode);
-      set(KEYS.THERMAL_WIDTH_DOTS, g.thermalWidthDots);
-      set(KEYS.THERMAL_CUT, g.thermalCut);
-      set(KEYS.THERMAL_FEED_LINES, g.thermalFeedLines);
+      set(KEYS.ESC_POS_WIDTH_DOTS, g.escPosWidthDots);
+      set(KEYS.ESC_POS_CUT, g.escPosCut);
+      set(KEYS.ESC_POS_FEED_LINES, g.escPosFeedLines);
       // Not through set(): it skips null, and null is what lifts the restriction.
       if ('printOrigins' in g) {
         pairs.push([KEYS.PRINT_ORIGINS, JSON.stringify(toPrintOrigins(g.printOrigins))]);

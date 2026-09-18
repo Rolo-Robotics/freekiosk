@@ -18,7 +18,7 @@ import {
   ManagedAppsSection,
   SettingsRadioGroup,
   SettingsDropdown,
-  ThermalPrinterSection,
+  EscPosPrinterSection,
 } from '../../../components/settings';
 import { ManagedApp } from '../../../types/managedApps';
 import Icon from '../../../components/Icon';
@@ -90,12 +90,12 @@ interface GeneralTabProps {
   onPrintPaperSizeChange: (value: string) => void;
   printDestinationMode: string;
   onPrintDestinationModeChange: (value: string) => void;
-  thermalWidthDots: number;
-  onThermalWidthDotsChange: (value: number) => void;
-  thermalCut: boolean;
-  onThermalCutChange: (value: boolean) => void;
-  thermalFeedLines: number;
-  onThermalFeedLinesChange: (value: number) => void;
+  escPosWidthDots: number;
+  onEscPosWidthDotsChange: (value: number) => void;
+  escPosCut: boolean;
+  onEscPosCutChange: (value: boolean) => void;
+  escPosFeedLines: number;
+  onEscPosFeedLinesChange: (value: number) => void;
   printOrigins: string[] | null;
   onPrintOriginsChange: (value: string[] | null) => void;
   
@@ -218,12 +218,12 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onPrintPaperSizeChange,
   printDestinationMode,
   onPrintDestinationModeChange,
-  thermalWidthDots,
-  onThermalWidthDotsChange,
-  thermalCut,
-  onThermalCutChange,
-  thermalFeedLines,
-  onThermalFeedLinesChange,
+  escPosWidthDots,
+  onEscPosWidthDotsChange,
+  escPosCut,
+  onEscPosCutChange,
+  escPosFeedLines,
+  onEscPosFeedLinesChange,
   printOrigins,
   onPrintOriginsChange,
   urlRotationEnabled,
@@ -1017,13 +1017,13 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           )}
 
           {printEnabled && printDestinationMode === 'silent' && (
-            <ThermalPrinterSection
-              widthDots={thermalWidthDots}
-              onWidthDotsChange={onThermalWidthDotsChange}
-              cut={thermalCut}
-              onCutChange={onThermalCutChange}
-              feedLines={thermalFeedLines}
-              onFeedLinesChange={onThermalFeedLinesChange}
+            <EscPosPrinterSection
+              widthDots={escPosWidthDots}
+              onWidthDotsChange={onEscPosWidthDotsChange}
+              cut={escPosCut}
+              onCutChange={onEscPosCutChange}
+              feedLines={escPosFeedLines}
+              onFeedLinesChange={onEscPosFeedLinesChange}
               origins={printOrigins}
               onOriginsChange={onPrintOriginsChange}
             />

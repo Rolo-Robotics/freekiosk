@@ -215,9 +215,9 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [printEnabled, setPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
   const [printDestinationMode, setPrintDestinationMode] = useState<string>('dialog');
-  const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
-  const [thermalCut, setThermalCut] = useState<boolean>(false);
-  const [thermalFeedLines, setThermalFeedLines] = useState<number>(0);
+  const [escPosWidthDots, setEscPosWidthDots] = useState<number>(384);
+  const [escPosCut, setEscPosCut] = useState<boolean>(false);
+  const [escPosFeedLines, setEscPosFeedLines] = useState<number>(0);
   const [printOrigins, setPrintOrigins] = useState<string[] | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [zoomMode, setZoomMode] = useState<string>('standard');
@@ -1920,9 +1920,9 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       const savedPrintPaperSize = str(K.PRINT_PAPER_SIZE) ?? 'A4';
       setPrintPaperSize(savedPrintPaperSize);
       setPrintDestinationMode(str(K.PRINT_DESTINATION_MODE) ?? 'dialog');
-      setThermalWidthDots(num(K.THERMAL_WIDTH_DOTS, 384));
-      setThermalCut(bool(K.THERMAL_CUT, false));
-      setThermalFeedLines(num(K.THERMAL_FEED_LINES, 0));
+      setEscPosWidthDots(num(K.ESC_POS_WIDTH_DOTS, 384));
+      setEscPosCut(bool(K.ESC_POS_CUT, false));
+      setEscPosFeedLines(num(K.ESC_POS_FEED_LINES, 0));
       setPrintOrigins(toPrintOrigins(jsonParse(K.PRINT_ORIGINS, null)));
       
       // Load WebView Zoom Level
@@ -2879,9 +2879,9 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
               printEnabled={printEnabled}
               printPaperSize={printPaperSize}
               printDestinationMode={printDestinationMode}
-              thermalWidthDots={thermalWidthDots}
-              thermalCut={thermalCut}
-              thermalFeedLines={thermalFeedLines}
+              escPosWidthDots={escPosWidthDots}
+              escPosCut={escPosCut}
+              escPosFeedLines={escPosFeedLines}
               printOrigins={printOrigins}
               zoomLevel={zoomLevel}
               zoomMode={zoomMode}

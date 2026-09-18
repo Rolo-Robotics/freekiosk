@@ -44,10 +44,10 @@ interface WebViewComponentProps {
   pdfViewerEnabled?: boolean; // Enable inline PDF viewing via PDF.js
   printEnabled?: boolean; // Enable window.print() interception for native printing
   printPaperSize?: string; // Default paper size: 'A4' | 'A5' | 'A3' | 'LETTER' | 'LEGAL'
-  printDestinationMode?: string; // 'dialog' (Android print framework) | 'silent' (ESC/POS thermal printer)
-  thermalWidthDots?: number; // Printable width in dots
-  thermalCut?: boolean;
-  thermalFeedLines?: number;
+  printDestinationMode?: string; // 'dialog' (Android print framework) | 'silent' (ESC/POS printer)
+  escPosWidthDots?: number; // Printable width in dots
+  escPosCut?: boolean;
+  escPosFeedLines?: number;
   printOrigins?: string[] | null; // Origins allowed to print in silent mode; null = any, [] = none
   zoomLevel?: number; // Zoom level percentage (50-200, default 100)
   zoomMode?: string; // 'standard' (CSS zoom) | 'fit' (viewport reflow, #188)
@@ -89,9 +89,9 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   printEnabled = false,
   printPaperSize = 'A4',
   printDestinationMode = 'dialog',
-  thermalWidthDots = 384,
-  thermalCut = false,
-  thermalFeedLines = 0,
+  escPosWidthDots = 384,
+  escPosCut = false,
+  escPosFeedLines = 0,
   printOrigins = null,
   zoomLevel = 100,
   zoomMode = 'standard',
@@ -384,7 +384,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       console.error('[FreeKiosk] localStorage FAILED:', e);
     }
 
-    // Intercept window.print(): straight to the thermal printer when one is configured,
+    // Intercept window.print(): straight to the ESC/POS printer when one is configured,
     // otherwise the Android print dialog as before.
     ${printEnabled && printDestinationMode === 'silent' ? `
     (function() {
@@ -800,9 +800,9 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     }
 
     const options = {
-      widthDots: thermalWidthDots,
-      cut: thermalCut,
-      feedLines: thermalFeedLines,
+      widthDots: escPosWidthDots,
+      cut: escPosCut,
+      feedLines: escPosFeedLines,
     };
     const payload = data.data || {};
     let work: Promise<unknown>;

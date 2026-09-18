@@ -1,5 +1,5 @@
 /**
- * FreeKiosk v2.0 - Thermal Printer Settings
+ * FreeKiosk v2.0 - ESC/POS Printer Settings
  * Printer selection, paper width and a self-test for the silent ESC/POS destination
  */
 
@@ -9,7 +9,7 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import Icon from '../Icon';
 import { Colors, FontSizes, Spacing } from '../../theme';
 import SilentPrintModule, {
-  DEFAULT_THERMAL_WIDTH_DOTS,
+  DEFAULT_ESC_POS_WIDTH_DOTS,
   type PrinterStatus,
 } from '../../utils/SilentPrintModule';
 import SettingsButton from './SettingsButton';
@@ -19,7 +19,7 @@ import SettingsSlider from './SettingsSlider';
 import SettingsSwitch from './SettingsSwitch';
 import UrlListEditor from './UrlListEditor';
 
-interface ThermalPrinterSectionProps {
+interface EscPosPrinterSectionProps {
   widthDots: number;
   onWidthDotsChange: (value: number) => void;
   cut: boolean;
@@ -48,7 +48,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   PAGE_RENDER_FAILED: 'The page could not be rendered for printing.',
 };
 
-const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
+const EscPosPrinterSection: React.FC<EscPosPrinterSectionProps> = ({
   widthDots,
   onWidthDotsChange,
   cut,
@@ -69,7 +69,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
       setStatus(next);
       return next;
     } catch (error) {
-      console.error('[ThermalPrinter] Status failed:', error);
+      console.error('[EscPosPrinter] Status failed:', error);
       const failed: PrinterStatus = { state: 'error', paper: 'unknown', printer: null };
       setStatus(failed);
       return failed;
@@ -94,7 +94,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
         );
       }
     } catch (error) {
-      console.error('[ThermalPrinter] Permission request failed:', error);
+      console.error('[EscPosPrinter] Permission request failed:', error);
     }
   };
 
@@ -168,7 +168,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
         hint="Printable width in dots (set according to the printer's specification)"
         value={String(widthDots)}
         onChangeText={(text) => onWidthDotsChange(parseInt(text, 10) || 0)}
-        placeholder={String(DEFAULT_THERMAL_WIDTH_DOTS)}
+        placeholder={String(DEFAULT_ESC_POS_WIDTH_DOTS)}
         keyboardType="number-pad"
       />
 
@@ -268,4 +268,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ThermalPrinterSection;
+export default EscPosPrinterSection;

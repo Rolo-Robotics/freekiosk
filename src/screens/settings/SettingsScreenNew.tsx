@@ -212,9 +212,9 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [printEnabled, setPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
   const [printDestinationMode, setPrintDestinationMode] = useState<string>('dialog');
-  const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
-  const [thermalCut, setThermalCut] = useState<boolean>(false);
-  const [thermalFeedLines, setThermalFeedLines] = useState<number>(0);
+  const [escPosWidthDots, setEscPosWidthDots] = useState<number>(384);
+  const [escPosCut, setEscPosCut] = useState<boolean>(false);
+  const [escPosFeedLines, setEscPosFeedLines] = useState<number>(0);
   const [printOrigins, setPrintOrigins] = useState<string[] | null>(null);
   
   // WebView Zoom Level
@@ -679,9 +679,9 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const savedPrintPaperSize = await StorageService.getPrintPaperSize();
     setPrintPaperSize(savedPrintPaperSize);
     setPrintDestinationMode(await StorageService.getPrintDestinationMode());
-    setThermalWidthDots(await StorageService.getThermalWidthDots());
-    setThermalCut(await StorageService.getThermalCut());
-    setThermalFeedLines(await StorageService.getThermalFeedLines());
+    setEscPosWidthDots(await StorageService.getEscPosWidthDots());
+    setEscPosCut(await StorageService.getEscPosCut());
+    setEscPosFeedLines(await StorageService.getEscPosFeedLines());
     setPrintOrigins(await StorageService.getPrintOrigins());
 
     // Dashboard settings
@@ -1538,9 +1538,9 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     await StorageService.savePrintEnabled(printEnabled);
     await StorageService.savePrintPaperSize(printPaperSize);
     await StorageService.savePrintDestinationMode(printDestinationMode);
-    await StorageService.saveThermalWidthDots(thermalWidthDots);
-    await StorageService.saveThermalCut(thermalCut);
-    await StorageService.saveThermalFeedLines(thermalFeedLines);
+    await StorageService.saveEscPosWidthDots(escPosWidthDots);
+    await StorageService.saveEscPosCut(escPosCut);
+    await StorageService.saveEscPosFeedLines(escPosFeedLines);
     await StorageService.savePrintOrigins(printOrigins);
 
     // Save Media Player settings
@@ -1893,12 +1893,12 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onPrintPaperSizeChange={setPrintPaperSize}
             printDestinationMode={printDestinationMode}
             onPrintDestinationModeChange={setPrintDestinationMode}
-            thermalWidthDots={thermalWidthDots}
-            onThermalWidthDotsChange={setThermalWidthDots}
-            thermalCut={thermalCut}
-            onThermalCutChange={setThermalCut}
-            thermalFeedLines={thermalFeedLines}
-            onThermalFeedLinesChange={setThermalFeedLines}
+            escPosWidthDots={escPosWidthDots}
+            onEscPosWidthDotsChange={setEscPosWidthDots}
+            escPosCut={escPosCut}
+            onEscPosCutChange={setEscPosCut}
+            escPosFeedLines={escPosFeedLines}
+            onEscPosFeedLinesChange={setEscPosFeedLines}
             printOrigins={printOrigins}
             onPrintOriginsChange={setPrintOrigins}
             urlRotationEnabled={urlRotationEnabled}

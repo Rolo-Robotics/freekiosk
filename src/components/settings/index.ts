@@ -14,7 +14,7 @@ export { default as SettingsModeSelector } from './SettingsModeSelector';
 export { default as UrlListEditor } from './UrlListEditor';
 export { default as BackupRestoreSection } from './BackupRestoreSection';
 export { default as ManagedAppsSection } from './ManagedAppsSection';
-export { default as ThermalPrinterSection } from './ThermalPrinterSection';
+export { default as EscPosPrinterSection } from './EscPosPrinterSection';
 
 // URL Planner components
 export { default as DaySelector } from './DaySelector';

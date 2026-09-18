@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
  * SilentPrintModule - Printing with no print dialog
  *
  * Android's print framework always shows the system print dialog, so an unattended kiosk cannot
- * use it. This drives a thermal printer directly instead.
+ * use it. This drives an ESC/POS printer directly instead.
  *
  * Features:
  * - Print the current WebView page through its print stylesheet
