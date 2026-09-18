@@ -126,9 +126,9 @@ export const KEYS = {
   PRINT_DESTINATION_MODE: '@kiosk_print_destination_mode',
   // Origins allowed to print in silent mode (JSON): null = any page, [] = none
   PRINT_ORIGINS: '@kiosk_print_origins',
-  ESC_POS_WIDTH_DOTS: '@kiosk_escpos_width_dots',
-  ESC_POS_CUT: '@kiosk_escpos_cut',
-  ESC_POS_FEED_LINES: '@kiosk_escpos_feed_lines',
+  ESC_POS_WIDTH_DOTS: '@kiosk_esc_pos_width_dots',
+  ESC_POS_CUT: '@kiosk_esc_pos_cut',
+  ESC_POS_FEED_LINES: '@kiosk_esc_pos_feed_lines',
   // WebView Zoom Level
   WEBVIEW_ZOOM_LEVEL: '@kiosk_webview_zoom_level',
   // WebView Zoom Mode ('standard' = CSS zoom | 'fit' = viewport reflow, #188)
