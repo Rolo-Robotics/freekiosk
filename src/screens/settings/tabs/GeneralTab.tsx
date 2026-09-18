@@ -985,13 +985,15 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
       {/* Printing - WebView only */}
       {displayMode === 'webview' && (
         <SettingsSection title="Printing" icon="printer">
+          {/* Window Printing (Android print dialog) */}
+          <Text style={[styles.subSectionTitle, styles.subSectionTitleFirst]}>Window Printing</Text>
           <SettingsSwitch
-            label="Window Printing"
+            label="Enable Window Printing"
             hint="Enable window.print() support for web pages (label printers, receipts, etc.)"
             value={windowPrintEnabled}
             onValueChange={onWindowPrintEnabledChange}
           />
-          
+
           {windowPrintEnabled && (
             <>
               <View style={styles.rotationSpacer} />
@@ -1020,25 +1022,29 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
             </SettingsInfoBox>
           )}
 
-          <SettingsSwitch
-            label="Silent Printing"
-            hint="Let web pages print to a USB ESC/POS printer with no dialog, via window.FreeKiosk.silentPrinter"
-            value={silentPrintEnabled}
-            onValueChange={onSilentPrintEnabledChange}
-          />
-
-          {silentPrintEnabled && (
-            <EscPosPrinterSection
-              widthDots={escPosWidthDots}
-              onWidthDotsChange={onEscPosWidthDotsChange}
-              cut={escPosCut}
-              onCutChange={onEscPosCutChange}
-              feedLines={escPosFeedLines}
-              onFeedLinesChange={onEscPosFeedLinesChange}
-              origins={printOrigins}
-              onOriginsChange={onPrintOriginsChange}
+          {/* Silent Printing (USB ESC/POS, no dialog) */}
+          <View style={styles.subSection}>
+            <Text style={styles.subSectionTitle}>Silent Printing</Text>
+            <SettingsSwitch
+              label="Enable Silent Printing"
+              hint="Let web pages print to a USB ESC/POS printer with no dialog, via window.FreeKiosk.silentPrinter"
+              value={silentPrintEnabled}
+              onValueChange={onSilentPrintEnabledChange}
             />
-          )}
+
+            {silentPrintEnabled && (
+              <EscPosPrinterSection
+                widthDots={escPosWidthDots}
+                onWidthDotsChange={onEscPosWidthDotsChange}
+                cut={escPosCut}
+                onCutChange={onEscPosCutChange}
+                feedLines={escPosFeedLines}
+                onFeedLinesChange={onEscPosFeedLinesChange}
+                origins={printOrigins}
+                onOriginsChange={onPrintOriginsChange}
+              />
+            )}
+          </View>
         </SettingsSection>
       )}
       
@@ -1180,6 +1186,21 @@ const styles = StyleSheet.create({
   },
   rotationSpacer: {
     height: Spacing.md,
+  },
+  subSection: {
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.divider,
+  },
+  subSectionTitle: {
+    ...Typography.labelSmall,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  subSectionTitleFirst: {
+    // Directly under the section header, which already provides the gap
+    marginTop: 0,
   },
   mediaItemCard: {
     backgroundColor: Colors.surfaceVariant,
