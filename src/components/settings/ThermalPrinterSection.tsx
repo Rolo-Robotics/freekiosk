@@ -172,7 +172,7 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
 
       <SettingsSlider
         label="Feed after printing"
-        hint="Blank lines fed after each print job"
+        hint="Blank lines fed at the end of each print job"
         value={feedLines}
         onValueChange={onFeedLinesChange}
         minimumValue={0}
