@@ -1,8 +1,8 @@
 
 
-# FreeKiosk Thermal Printing
+# FreeKiosk Silent Printing
 
-**Silent printing from a web page to a thermal printer, with no print dialog**
+**Silent printing from a web page to an ESC/POS printer, with no print dialog**
 
 <p>
   <a href="README.md">Docs Home</a> •
@@ -28,8 +28,8 @@
 
 ## What You Need
 
-- A USB thermal printer that speaks **ESC/POS**, the most common thermal printer command set. Printers
-  that speak only a label language such as ZPL or TSPL are not supported.
+- A USB printer that speaks **ESC/POS**, the most common POS printer command set. Printers that
+  speak only a label language such as ZPL or TSPL are not supported.
 - A USB-C adapter with a **power passthrough** port, so the tablet charges while the printer is
   attached.
 

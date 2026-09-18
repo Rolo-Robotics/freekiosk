@@ -18,7 +18,7 @@ interface RasterDriver {
 }
 
 /**
- * ESC/POS raster, the most widely supported thermal printer command set.
+ * ESC/POS raster, the most widely supported POS printer command set.
  *
  * Raster rather than text mode: text mode depends on per-model code pages, which is how £, € and
  * accented characters turn to garbage, and on native QR commands many cheap printers lack.

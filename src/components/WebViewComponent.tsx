@@ -1137,7 +1137,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
             return false;
           }
           
-          // data: URLs - allow when printing is enabled (some label/thermal printing sites
+          // data: URLs - allow when printing is enabled (some label/receipt sites
           // generate print content as data:text/html popups)
           if (urlLower.startsWith('data:')) {
             if (printEnabled) {
