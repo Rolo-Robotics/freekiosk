@@ -44,7 +44,7 @@ class MonoBitmap(
 
         fun bytesPerRow(width: Int): Int = (width + 7) / 8
 
-        /** Joins the pages of a paginated document back into the continuous strip paper is. */
+        /** Joins the pages of a paginated document back into one continuous strip, as roll paper is. */
         fun concat(parts: List<MonoBitmap>): MonoBitmap {
             require(parts.isNotEmpty()) { "Nothing to join" }
             if (parts.size == 1) return parts.first()

@@ -102,20 +102,24 @@ window.addEventListener('freekiosk:ready', async () => {
 Injection happens after the page loads, so check for `window.FreeKiosk` at the moment you print, or
 wait for the `freekiosk:ready` event.
 
-| Method | Returns |
-|--------|---------|
-| `status()` | `{ state, paper, printer }` |
+| Method | Description |
+|--------|-------------|
+| `status()` | Resolves with `{ state, paper, printer }` |
 | `printPage(jobName?)` | Prints the current page through its print stylesheet |
 | `printImage(base64)` | Prints a PNG or JPEG, with or without a `data:` prefix |
 
+`printPage` and `printImage` resolve `true` once the printer has accepted every byte.
+
 `state` is one of `ready`, `no_printer`, `no_permission`, `paper_out` or `error`. `paper` is `ok`,
-`out` or `unknown` — many printers have no paper sensor, and `unknown` is printable.
+`out` or `unknown`. `unknown` means the paper state could not be read, and does not block printing.
+A printer with no paper sensor usually reports `ok`, so `ok` does not guarantee paper.
 
 Rejections carry a `code`: `NO_PRINTER`, `NO_PERMISSION`, `PAPER_OUT`, `OPEN_FAILED`, `WRITE_FAILED`,
-`BAD_IMAGE`, `PAGE_RENDER_FAILED`, `NO_WEBVIEW` or `ORIGIN_NOT_ALLOWED`.
+`BAD_IMAGE`, `PAGE_RENDER_FAILED`, `NO_WEBVIEW`, `ORIGIN_NOT_ALLOWED`, or `ERROR` for anything
+unexpected.
 
-**Restrict printing by origin** in Settings limits printing to the origins you list; this covers
-`window.print()` as well, since it prints through the same API. Only the scheme, host and port of
+**Restrict printing by origin** in Settings limits `window.FreeKiosk.printer`, `status()` included,
+to the origins you list; this covers `window.print()` as well, since it prints through the same API. Only the scheme, host and port of
 each entry are compared. Turned on with nothing listed, no page can print. Turned off, any page the
 kiosk displays may print, which is what `window.print()` has always done.
 

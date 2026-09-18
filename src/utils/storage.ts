@@ -235,7 +235,10 @@ const deepMerge = (base: unknown, overlay: unknown): unknown => {
   return out;
 };
 
-/** Silent-print origin allow-list: null = any page may print, [] = none may. */
+/**
+ * Normalizes the silent-print origin allow-list: null = any page may print, [] = none may.
+ * Anything but an array reads as null.
+ */
 export const toPrintOrigins = (value: unknown): string[] | null =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : null;
 

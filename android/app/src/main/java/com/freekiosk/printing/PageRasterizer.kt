@@ -67,16 +67,16 @@ object PageRasterizer {
         .setMediaSize(
             // Margins are zero, so the media width is the printable width.
             PrintAttributes.MediaSize(
-                "freekiosk_esc_pos_roll",
-                "ESC/POS roll",
+                "freekiosk_roll",
+                "Roll paper",
                 widthDots * 1000 / CSS_PX_PER_INCH,
                 PAGE_HEIGHT_MILS,
             ),
         )
         .setResolution(
             PrintAttributes.Resolution(
-                "esc_pos",
-                "ESC/POS",
+                "freekiosk_render",
+                "Render resolution",
                 RENDER_RESOLUTION_DPI,
                 RENDER_RESOLUTION_DPI,
             ),

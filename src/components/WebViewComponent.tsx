@@ -384,8 +384,8 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       console.error('[FreeKiosk] localStorage FAILED:', e);
     }
 
-    // Intercept window.print(): straight to the ESC/POS printer when one is configured,
-    // otherwise the Android print dialog as before.
+    // Intercept window.print(): in Silent Print mode straight to the ESC/POS printer,
+    // otherwise to the Android print dialog as before.
     ${printEnabled && printDestinationMode === 'silent' ? `
     (function() {
       var pending = {};

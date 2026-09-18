@@ -96,7 +96,7 @@ class SilentPrintModule(reactContext: ReactApplicationContext) :
     fun printImage(base64: String?, options: ReadableMap?, promise: Promise) {
         val opts = printOptions(options)
         executor.execute {
-            runJob(promise, "Could not print") {
+            runJob(promise, "Could not print the image") {
                 val bitmap = decodeImage(base64)
                 try {
                     printBitmap(bitmap, opts)

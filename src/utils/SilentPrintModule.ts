@@ -9,7 +9,10 @@ export type PrinterState =
   | 'paper_out'
   | 'error';
 
-/** 'unknown' means the printer reports no paper sensor, which is common. */
+/**
+ * 'unknown' means the paper state could not be read. A printer with no paper sensor usually
+ * reports 'ok', so 'ok' does not guarantee paper.
+ */
 export type PaperState = 'ok' | 'out' | 'unknown';
 
 export interface PrinterInfo {

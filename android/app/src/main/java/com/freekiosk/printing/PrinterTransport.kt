@@ -38,7 +38,10 @@ data class PrinterDescription(
         }
 }
 
-/** UNKNOWN means the printer reports no paper sensor, and must be treated as printable. */
+/**
+ * UNKNOWN means the paper state could not be read, and must not block printing. A printer with no
+ * paper sensor usually reports OK, so OK does not guarantee paper.
+ */
 enum class PaperState { OK, OUT, UNKNOWN }
 
 data class PrinterStatus(

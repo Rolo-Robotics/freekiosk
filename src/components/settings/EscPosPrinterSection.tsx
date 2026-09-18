@@ -1,6 +1,6 @@
 /**
  * FreeKiosk v2.0 - ESC/POS Printer Settings
- * Printer selection, paper width and a self-test for the silent ESC/POS destination
+ * Printer status, print width, feed, cut, origin restriction and a test page for Silent Print
  */
 
 import React, { useCallback, useEffect, useState } from 'react';

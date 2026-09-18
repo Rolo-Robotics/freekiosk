@@ -19,7 +19,8 @@ import com.freekiosk.DebugLog
  * USB printers, over the USB Printer Class (07h).
  *
  * Targeting the class rather than a list of vendor ids is what makes unfamiliar printers work.
- * Vendor-class interfaces are driven too, through the bulk OUT fallback, but answer no status.
+ * With no printer-class interface attached, the first interface of any class with a bulk OUT
+ * endpoint is driven instead, and answers no status.
  */
 class UsbPrinterTransport(private val context: Context) : PrinterTransport {
 
