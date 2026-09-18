@@ -215,7 +215,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
   const [thermalCut, setThermalCut] = useState<boolean>(false);
   const [thermalFeedLines, setThermalFeedLines] = useState<number>(0);
-  const [printOrigins, setPrintOrigins] = useState<string>('');
+  const [printOrigins, setPrintOrigins] = useState<string[] | null>(null);
   
   // WebView Zoom Level
   const [zoomLevel, setZoomLevel] = useState<number>(100);

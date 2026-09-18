@@ -48,7 +48,7 @@ interface WebViewComponentProps {
   thermalWidthDots?: number; // Printable width in dots
   thermalCut?: boolean;
   thermalFeedLines?: number;
-  printOrigins?: string; // Origins allowed to use window.FreeKiosk.printer; empty = any
+  printOrigins?: string[] | null; // Origins allowed to print in silent mode; null = any, [] = none
   zoomLevel?: number; // Zoom level percentage (50-200, default 100)
   zoomMode?: string; // 'standard' (CSS zoom) | 'fit' (viewport reflow, #188)
   disableUserZoom?: boolean; // Prevent pinch-to-zoom and double-tap zoom
@@ -92,7 +92,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   thermalWidthDots = 384,
   thermalCut = false,
   thermalFeedLines = 0,
-  printOrigins = '',
+  printOrigins = null,
   zoomLevel = 100,
   zoomMode = 'standard',
   disableUserZoom = false,
@@ -778,15 +778,14 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     webViewRef.current?.injectJavaScript(`window.__fkSettle && window.__fkSettle(${safeArg}); true;`);
   };
 
-  /** Empty allow-list means any displayed page may print, as window.print() always has. */
+  const originOf = (address?: string): string | null =>
+    address?.trim().match(/^[a-z]+:\/\/[^/?#]+/i)?.[0].toLowerCase() ?? null;
+
+  /** No allow-list means any displayed page may print, as window.print() always has. */
   const printerOriginAllowed = (pageUrl?: string): boolean => {
-    const allowed = printOrigins
-      .split(/[\s,]+/)
-      .map((entry) => entry.trim().replace(/\/$/, ''))
-      .filter(Boolean);
-    if (allowed.length === 0) return true;
-    const origin = (pageUrl ?? '').match(/^[a-z]+:\/\/[^/]+/i)?.[0] ?? '';
-    return allowed.some((entry) => entry.toLowerCase() === origin.toLowerCase());
+    if (!printOrigins) return true;
+    const origin = originOf(pageUrl);
+    return origin !== null && printOrigins.some((entry) => originOf(entry) === origin);
   };
 
   const handlePrinterRequest = (data: any, pageUrl?: string) => {

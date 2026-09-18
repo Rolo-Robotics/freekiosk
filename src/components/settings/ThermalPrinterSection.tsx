@@ -17,6 +17,7 @@ import SettingsInfoBox from './SettingsInfoBox';
 import SettingsInput from './SettingsInput';
 import SettingsSlider from './SettingsSlider';
 import SettingsSwitch from './SettingsSwitch';
+import UrlListEditor from './UrlListEditor';
 
 interface ThermalPrinterSectionProps {
   widthDots: number;
@@ -25,8 +26,9 @@ interface ThermalPrinterSectionProps {
   onCutChange: (value: boolean) => void;
   feedLines: number;
   onFeedLinesChange: (value: number) => void;
-  origins: string;
-  onOriginsChange: (value: string) => void;
+  /** null = any page may print; [] = no page may */
+  origins: string[] | null;
+  onOriginsChange: (value: string[] | null) => void;
 }
 
 const STATE_LABELS: Record<PrinterStatus['state'], string> = {
@@ -188,15 +190,23 @@ const ThermalPrinterSection: React.FC<ThermalPrinterSectionProps> = ({
         onValueChange={onCutChange}
       />
 
-      <SettingsInput
-        label="Allowed origins"
-        hint="Optional. Sites that may print via window.FreeKiosk.printer, one per line. Leave empty to allow whatever the kiosk is displaying."
-        value={origins}
-        onChangeText={onOriginsChange}
-        placeholder="https://app.example.com"
-        multiline
-        autoCapitalize="none"
+      <SettingsSwitch
+        label="Restrict printing by origin"
+        hint="Only pages from the origins you list can print, via window.print() or window.FreeKiosk.printer"
+        value={origins !== null}
+        onValueChange={(enabled) => onOriginsChange(enabled ? [] : null)}
       />
+
+      {origins !== null && (
+        <UrlListEditor
+          urls={origins}
+          onUrlsChange={onOriginsChange}
+          maxUrls={0}
+          placeholder="https://app.example.com"
+          emptyTitle="No origins allowed"
+          emptyHint="No page can print until you add one"
+        />
+      )}
 
       <SettingsButton
         title="Print test page"

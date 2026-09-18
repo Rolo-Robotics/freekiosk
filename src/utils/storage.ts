@@ -124,7 +124,7 @@ export const KEYS = {
   PRINT_PAPER_SIZE: '@kiosk_print_paper_size',
   // 'dialog' (Android print framework) | 'silent' (ESC/POS thermal printer)
   PRINT_DESTINATION_MODE: '@kiosk_print_destination_mode',
-  // Origins allowed to use window.FreeKiosk.printer; empty = any
+  // Origins allowed to print in silent mode (JSON): null = any page, [] = none
   PRINT_ORIGINS: '@kiosk_print_origins',
   THERMAL_WIDTH_DOTS: '@kiosk_thermal_width_dots',
   THERMAL_CUT: '@kiosk_thermal_cut',
@@ -234,6 +234,10 @@ const deepMerge = (base: unknown, overlay: unknown): unknown => {
   }
   return out;
 };
+
+/** Silent-print origin allow-list: null = any page may print, [] = none may. */
+export const toPrintOrigins = (value: unknown): string[] | null =>
+  Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : null;
 
 export const StorageService = {
   //URL
@@ -2376,20 +2380,21 @@ export const StorageService = {
     }
   },
 
-  savePrintOrigins: async (value: string): Promise<void> => {
+  savePrintOrigins: async (value: string[] | null): Promise<void> => {
     try {
-      await AsyncStorage.setItem(KEYS.PRINT_ORIGINS, value);
+      await AsyncStorage.setItem(KEYS.PRINT_ORIGINS, JSON.stringify(value));
     } catch (error) {
       console.error('Error saving print origins:', error);
     }
   },
 
-  getPrintOrigins: async (): Promise<string> => {
+  getPrintOrigins: async (): Promise<string[] | null> => {
     try {
-      return (await AsyncStorage.getItem(KEYS.PRINT_ORIGINS)) || '';
+      const value = await AsyncStorage.getItem(KEYS.PRINT_ORIGINS);
+      return toPrintOrigins(value ? JSON.parse(value) : null);
     } catch (error) {
       console.error('Error getting print origins:', error);
-      return '';
+      return null;
     }
   },
 
@@ -3280,7 +3285,7 @@ export const StorageService = {
         thermalWidthDots: num(KEYS.THERMAL_WIDTH_DOTS, 384),
         thermalCut: bool(KEYS.THERMAL_CUT),
         thermalFeedLines: num(KEYS.THERMAL_FEED_LINES, 0),
-        printOrigins: str(KEYS.PRINT_ORIGINS, ''),
+        printOrigins: toPrintOrigins(json(KEYS.PRINT_ORIGINS)),
         urlRotation: {
           enabled: bool(KEYS.URL_ROTATION_ENABLED),
           list: json(KEYS.URL_ROTATION_LIST, []),
@@ -3485,7 +3490,10 @@ export const StorageService = {
       set(KEYS.THERMAL_WIDTH_DOTS, g.thermalWidthDots);
       set(KEYS.THERMAL_CUT, g.thermalCut);
       set(KEYS.THERMAL_FEED_LINES, g.thermalFeedLines);
-      set(KEYS.PRINT_ORIGINS, g.printOrigins);
+      // Not through set(): it skips null, and null is what lifts the restriction.
+      if ('printOrigins' in g) {
+        pairs.push([KEYS.PRINT_ORIGINS, JSON.stringify(toPrintOrigins(g.printOrigins))]);
+      }
       const ur = g.urlRotation as Record<string, unknown> | undefined;
       if (ur) {
         set(KEYS.URL_ROTATION_ENABLED, ur.enabled);

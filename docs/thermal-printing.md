@@ -114,7 +114,9 @@ wait for the `freekiosk:ready` event.
 Rejections carry a `code`: `NO_PRINTER`, `NO_PERMISSION`, `PAPER_OUT`, `OPEN_FAILED`, `WRITE_FAILED`,
 `BAD_IMAGE`, `PAGE_RENDER_FAILED`, `NO_WEBVIEW` or `ORIGIN_NOT_ALLOWED`.
 
-**Allowed origins** in Settings restricts which sites may call the API. Left empty, any page the
+**Restrict printing by origin** in Settings limits printing to the origins you list; this covers
+`window.print()` as well, since it prints through the same API. Only the scheme, host and port of
+each entry are compared. Turned on with nothing listed, no page can print. Turned off, any page the
 kiosk displays may print, which is what `window.print()` has always done.
 
 

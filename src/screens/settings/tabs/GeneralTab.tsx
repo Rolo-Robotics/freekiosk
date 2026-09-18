@@ -96,8 +96,8 @@ interface GeneralTabProps {
   onThermalCutChange: (value: boolean) => void;
   thermalFeedLines: number;
   onThermalFeedLinesChange: (value: number) => void;
-  printOrigins: string;
-  onPrintOriginsChange: (value: string) => void;
+  printOrigins: string[] | null;
+  onPrintOriginsChange: (value: string[] | null) => void;
   
   // URL Rotation (webview only)
   urlRotationEnabled: boolean;

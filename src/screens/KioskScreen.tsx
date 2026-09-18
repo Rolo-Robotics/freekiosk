@@ -10,7 +10,7 @@ import StatusBar from '../components/StatusBar';
 import MotionDetector from '../components/MotionDetector';
 import ProximityDetectionModule, { onProximityNear as onProximityNearEvent } from '../utils/ProximityDetectionModule';
 import ExternalAppOverlay from '../components/ExternalAppOverlay';
-import { StorageService } from '../utils/storage';
+import { StorageService, toPrintOrigins } from '../utils/storage';
 import { saveSecurePin, saveSecureMqttPassword, getSecureBasicAuthPassword } from '../utils/secureStorage';
 import KioskModule from '../utils/KioskModule';
 import AppLauncherModule from '../utils/AppLauncherModule';
@@ -218,7 +218,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [thermalWidthDots, setThermalWidthDots] = useState<number>(384);
   const [thermalCut, setThermalCut] = useState<boolean>(false);
   const [thermalFeedLines, setThermalFeedLines] = useState<number>(0);
-  const [printOrigins, setPrintOrigins] = useState<string>('');
+  const [printOrigins, setPrintOrigins] = useState<string[] | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [zoomMode, setZoomMode] = useState<string>('standard');
   const [disableUserZoom, setDisableUserZoom] = useState<boolean>(false);
@@ -1923,7 +1923,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       setThermalWidthDots(num(K.THERMAL_WIDTH_DOTS, 384));
       setThermalCut(bool(K.THERMAL_CUT, false));
       setThermalFeedLines(num(K.THERMAL_FEED_LINES, 0));
-      setPrintOrigins(str(K.PRINT_ORIGINS) ?? '');
+      setPrintOrigins(toPrintOrigins(jsonParse(K.PRINT_ORIGINS, null)));
       
       // Load WebView Zoom Level
       const savedZoomLevel = num(K.WEBVIEW_ZOOM_LEVEL, 100);
