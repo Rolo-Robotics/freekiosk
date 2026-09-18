@@ -211,7 +211,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   // Printing state
   const [printEnabled, setPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
-  const [printDestinationMode, setPrintDestinationMode] = useState<string>('dialog');
+  const [silentPrintEnabled, setSilentPrintEnabled] = useState<boolean>(false);
   const [escPosWidthDots, setEscPosWidthDots] = useState<number>(384);
   const [escPosCut, setEscPosCut] = useState<boolean>(false);
   const [escPosFeedLines, setEscPosFeedLines] = useState<number>(0);
@@ -678,7 +678,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setPrintEnabled(savedPrintEnabled);
     const savedPrintPaperSize = await StorageService.getPrintPaperSize();
     setPrintPaperSize(savedPrintPaperSize);
-    setPrintDestinationMode(await StorageService.getPrintDestinationMode());
+    setSilentPrintEnabled(await StorageService.getSilentPrintEnabled());
     setEscPosWidthDots(await StorageService.getEscPosWidthDots());
     setEscPosCut(await StorageService.getEscPosCut());
     setEscPosFeedLines(await StorageService.getEscPosFeedLines());
@@ -1537,7 +1537,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     // Save Printing setting
     await StorageService.savePrintEnabled(printEnabled);
     await StorageService.savePrintPaperSize(printPaperSize);
-    await StorageService.savePrintDestinationMode(printDestinationMode);
+    await StorageService.saveSilentPrintEnabled(silentPrintEnabled);
     await StorageService.saveEscPosWidthDots(escPosWidthDots);
     await StorageService.saveEscPosCut(escPosCut);
     await StorageService.saveEscPosFeedLines(escPosFeedLines);
@@ -1891,8 +1891,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onPrintEnabledChange={setPrintEnabled}
             printPaperSize={printPaperSize}
             onPrintPaperSizeChange={setPrintPaperSize}
-            printDestinationMode={printDestinationMode}
-            onPrintDestinationModeChange={setPrintDestinationMode}
+            silentPrintEnabled={silentPrintEnabled}
+            onSilentPrintEnabledChange={setSilentPrintEnabled}
             escPosWidthDots={escPosWidthDots}
             onEscPosWidthDotsChange={setEscPosWidthDots}
             escPosCut={escPosCut}

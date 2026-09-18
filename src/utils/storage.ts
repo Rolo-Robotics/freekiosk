@@ -122,9 +122,9 @@ export const KEYS = {
   // Printing
   PRINT_ENABLED: '@kiosk_print_enabled',
   PRINT_PAPER_SIZE: '@kiosk_print_paper_size',
-  // 'dialog' (Android print framework) | 'silent' (ESC/POS printer)
-  PRINT_DESTINATION_MODE: '@kiosk_print_destination_mode',
-  // Origins allowed to print in silent mode (JSON): null = any page, [] = none
+  // Silent Print: window.FreeKiosk.printer drives an ESC/POS printer, independent of window.print()
+  SILENT_PRINT_ENABLED: '@kiosk_silent_print_enabled',
+  // Origins allowed to use Silent Print (JSON): null = any page, [] = none
   PRINT_ORIGINS: '@kiosk_print_origins',
   ESC_POS_WIDTH_DOTS: '@kiosk_esc_pos_width_dots',
   ESC_POS_CUT: '@kiosk_esc_pos_cut',
@@ -527,7 +527,7 @@ export const StorageService = {
         KEYS.PDF_VIEWER_ENABLED,
         // Printing
         KEYS.PRINT_ENABLED,
-        KEYS.PRINT_DESTINATION_MODE,
+        KEYS.SILENT_PRINT_ENABLED,
         KEYS.ESC_POS_WIDTH_DOTS,
         KEYS.ESC_POS_CUT,
         KEYS.ESC_POS_FEED_LINES,
@@ -2309,21 +2309,21 @@ export const StorageService = {
     }
   },
 
-  savePrintDestinationMode: async (value: string): Promise<void> => {
+  saveSilentPrintEnabled: async (value: boolean): Promise<void> => {
     try {
-      await AsyncStorage.setItem(KEYS.PRINT_DESTINATION_MODE, value);
+      await AsyncStorage.setItem(KEYS.SILENT_PRINT_ENABLED, JSON.stringify(value));
     } catch (error) {
-      console.error('Error saving print destination mode:', error);
+      console.error('Error saving silent print enabled:', error);
     }
   },
 
-  getPrintDestinationMode: async (): Promise<string> => {
+  getSilentPrintEnabled: async (): Promise<boolean> => {
     try {
-      const value = await AsyncStorage.getItem(KEYS.PRINT_DESTINATION_MODE);
-      return value || 'dialog';
+      const value = await AsyncStorage.getItem(KEYS.SILENT_PRINT_ENABLED);
+      return value ? JSON.parse(value) : false;
     } catch (error) {
-      console.error('Error getting print destination mode:', error);
-      return 'dialog';
+      console.error('Error getting silent print enabled:', error);
+      return false;
     }
   },
 
@@ -3284,7 +3284,7 @@ export const StorageService = {
         pdfViewerEnabled: bool(KEYS.PDF_VIEWER_ENABLED),
         printEnabled: bool(KEYS.PRINT_ENABLED),
         printPaperSize: str(KEYS.PRINT_PAPER_SIZE, 'A4'),
-        printDestinationMode: str(KEYS.PRINT_DESTINATION_MODE, 'dialog'),
+        silentPrintEnabled: bool(KEYS.SILENT_PRINT_ENABLED),
         escPosWidthDots: num(KEYS.ESC_POS_WIDTH_DOTS, 384),
         escPosCut: bool(KEYS.ESC_POS_CUT),
         escPosFeedLines: num(KEYS.ESC_POS_FEED_LINES, 0),
@@ -3489,7 +3489,7 @@ export const StorageService = {
       set(KEYS.PDF_VIEWER_ENABLED, g.pdfViewerEnabled);
       set(KEYS.PRINT_ENABLED, g.printEnabled);
       set(KEYS.PRINT_PAPER_SIZE, g.printPaperSize);
-      set(KEYS.PRINT_DESTINATION_MODE, g.printDestinationMode);
+      set(KEYS.SILENT_PRINT_ENABLED, g.silentPrintEnabled);
       set(KEYS.ESC_POS_WIDTH_DOTS, g.escPosWidthDots);
       set(KEYS.ESC_POS_CUT, g.escPosCut);
       set(KEYS.ESC_POS_FEED_LINES, g.escPosFeedLines);

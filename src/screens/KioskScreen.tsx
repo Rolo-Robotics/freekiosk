@@ -214,7 +214,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const pdfViewerEnabledRef = useRef<boolean>(false);
   const [printEnabled, setPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
-  const [printDestinationMode, setPrintDestinationMode] = useState<string>('dialog');
+  const [silentPrintEnabled, setSilentPrintEnabled] = useState<boolean>(false);
   const [escPosWidthDots, setEscPosWidthDots] = useState<number>(384);
   const [escPosCut, setEscPosCut] = useState<boolean>(false);
   const [escPosFeedLines, setEscPosFeedLines] = useState<number>(0);
@@ -1919,7 +1919,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       setPrintEnabled(savedPrintEnabled);
       const savedPrintPaperSize = str(K.PRINT_PAPER_SIZE) ?? 'A4';
       setPrintPaperSize(savedPrintPaperSize);
-      setPrintDestinationMode(str(K.PRINT_DESTINATION_MODE) ?? 'dialog');
+      setSilentPrintEnabled(bool(K.SILENT_PRINT_ENABLED, false));
       setEscPosWidthDots(num(K.ESC_POS_WIDTH_DOTS, 384));
       setEscPosCut(bool(K.ESC_POS_CUT, false));
       setEscPosFeedLines(num(K.ESC_POS_FEED_LINES, 0));
@@ -2878,7 +2878,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
               pdfViewerEnabled={pdfViewerEnabled}
               printEnabled={printEnabled}
               printPaperSize={printPaperSize}
-              printDestinationMode={printDestinationMode}
+              silentPrintEnabled={silentPrintEnabled}
               escPosWidthDots={escPosWidthDots}
               escPosCut={escPosCut}
               escPosFeedLines={escPosFeedLines}

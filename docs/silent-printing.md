@@ -44,7 +44,7 @@ product id if Android does not offer FreeKiosk when it is plugged in.
 1. Plug the printer into the adapter and switch it on.
 2. Android asks which app should open the device. Choose **FreeKiosk** and tick **Always open**.
 3. Go to **Settings > General > Printing**.
-4. Turn on **Allow Printing**, then set **Print Destination Mode** to **Silent Print**.
+4. Turn on **Silent Print**. It does not need **Allow Printing**, which only controls `window.print()`.
 5. Check the status card names your printer, then tap **Print test page**.
 
 > [!WARNING]
@@ -62,8 +62,14 @@ the printer actually addresses, so no paper size or resolution is assumed anywhe
 
 ## Printing From a Web Page
 
-Call `window.print()`. That is the whole integration: the page's own print stylesheet is what lands
-on paper, including its fonts, its language and any QR codes.
+Call `window.FreeKiosk.printer.printPage()`. The page's own print stylesheet is what lands on paper,
+including its fonts, its language and any QR codes.
+
+`window.print()` is separate and unchanged: with **Allow Printing** on it opens the Android print
+dialog, and otherwise it does nothing. A page can use both, A4 through the dialog and receipts
+through Silent Print, but both render the same `@media print` stylesheet. Switch it to the receipt
+layout before calling `printPage()`, for example with a class on `<html>`, or render the receipt
+yourself and call `printImage()`.
 
 The page is laid out so that **one CSS pixel is one printer dot**, so design against the configured
 width — 384px below:
@@ -87,8 +93,9 @@ background images, and text large enough to stay legible at one dot per pixel.
 
 ## The JavaScript API
 
-`window.FreeKiosk.printer` is injected when **Silent Print** is selected. Use it when a page
-needs to know the outcome — `window.print()` cannot report that the paper ran out.
+`window.FreeKiosk.printer` is injected when **Silent Print** is on. Every call returns a promise, so
+a page knows whether a print went through, and `status()` lets it check for paper before it promises
+a ticket.
 
 ```js
 window.addEventListener('freekiosk:ready', async () => {
@@ -119,9 +126,9 @@ Rejections carry a `code`: `NO_PRINTER`, `NO_PERMISSION`, `PAPER_OUT`, `OPEN_FAI
 unexpected.
 
 **Restrict printing by origin** in Settings limits `window.FreeKiosk.printer`, `status()` included,
-to the origins you list; this covers `window.print()` as well, since it prints through the same API. Only the scheme, host and port of
-each entry are compared. Turned on with nothing listed, no page can print. Turned off, any page the
-kiosk displays may print, which is what `window.print()` has always done.
+to the origins you list. Only the scheme, host and port of each entry are compared. Turned on with
+nothing listed, no page can print. Turned off, any page the kiosk displays may print. It does not
+cover `window.print()`, whose dialog needs someone to confirm it anyway.
 
 
 ## Troubleshooting

@@ -6,7 +6,6 @@ export { default as SettingsSection } from './SettingsSection';
 export { default as SettingsSwitch } from './SettingsSwitch';
 export { default as SettingsInput } from './SettingsInput';
 export { default as SettingsRadioGroup } from './SettingsRadioGroup';
-export { default as SettingsDropdown } from './SettingsDropdown';
 export { default as SettingsSlider } from './SettingsSlider';
 export { default as SettingsButton } from './SettingsButton';
 export { default as SettingsInfoBox } from './SettingsInfoBox';

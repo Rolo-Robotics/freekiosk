@@ -44,11 +44,11 @@ interface WebViewComponentProps {
   pdfViewerEnabled?: boolean; // Enable inline PDF viewing via PDF.js
   printEnabled?: boolean; // Enable window.print() interception for native printing
   printPaperSize?: string; // Default paper size: 'A4' | 'A5' | 'A3' | 'LETTER' | 'LEGAL'
-  printDestinationMode?: string; // 'dialog' (Android print framework) | 'silent' (ESC/POS printer)
+  silentPrintEnabled?: boolean; // Inject window.FreeKiosk.printer, which drives an ESC/POS printer
   escPosWidthDots?: number; // Printable width in dots
   escPosCut?: boolean;
   escPosFeedLines?: number;
-  printOrigins?: string[] | null; // Origins allowed to print in silent mode; null = any, [] = none
+  printOrigins?: string[] | null; // Origins allowed to use Silent Print; null = any, [] = none
   zoomLevel?: number; // Zoom level percentage (50-200, default 100)
   zoomMode?: string; // 'standard' (CSS zoom) | 'fit' (viewport reflow, #188)
   disableUserZoom?: boolean; // Prevent pinch-to-zoom and double-tap zoom
@@ -88,7 +88,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   pdfViewerEnabled = false,
   printEnabled = false,
   printPaperSize = 'A4',
-  printDestinationMode = 'dialog',
+  silentPrintEnabled = false,
   escPosWidthDots = 384,
   escPosCut = false,
   escPosFeedLines = 0,
@@ -384,9 +384,20 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       console.error('[FreeKiosk] localStorage FAILED:', e);
     }
 
-    // Intercept window.print(): in Silent Print mode straight to the ESC/POS printer,
-    // otherwise to the Android print dialog as before.
-    ${printEnabled && printDestinationMode === 'silent' ? `
+    // Intercept window.print() to use native Android print (only when printing is enabled)
+    ${printEnabled ? `
+    window.print = function() {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'PRINT_REQUEST',
+        title: document.title || '',
+        paperSize: '${printPaperSize}'
+      }));
+    };
+    ` : '// Printing disabled - window.print() not intercepted'}
+
+    // Silent Print: window.FreeKiosk.printer drives the ESC/POS printer with no dialog.
+    // window.print() is left to the block above.
+    ${silentPrintEnabled ? `
     (function() {
       var pending = {};
       var nextId = 1;
@@ -426,24 +437,10 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
         printImage: function(base64) { return call('printImage', { base64: base64 }); }
       };
 
-      window.print = function() {
-        window.FreeKiosk.printer.printPage().catch(function(e) {
-          console.error('[FreeKiosk] Print failed:', e && e.code ? e.code : e);
-        });
-      };
-
       // Injection happens after load, so a page that booted first has to be told.
       window.dispatchEvent(new Event('freekiosk:ready'));
     })();
-    ` : printEnabled ? `
-    window.print = function() {
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'PRINT_REQUEST',
-        title: document.title || '',
-        paperSize: '${printPaperSize}'
-      }));
-    };
-    ` : '// Printing disabled - window.print() not intercepted'}
+    ` : ''}
 
     // Throttling pour éviter le flood de messages (critique sur Fire OS)
     let lastInteraction = 0;
@@ -781,7 +778,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   const originOf = (address?: string): string | null =>
     address?.trim().match(/^[a-z]+:\/\/[^/?#]+/i)?.[0].toLowerCase() ?? null;
 
-  /** No allow-list means any displayed page may print, as window.print() always has. */
+  /** No allow-list means any displayed page may print. */
   const printerOriginAllowed = (pageUrl?: string): boolean => {
     if (!printOrigins) return true;
     const origin = originOf(pageUrl);
@@ -789,6 +786,9 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   };
 
   const handlePrinterRequest = (data: any, pageUrl?: string) => {
+    // The API is only injected when Silent Print is on, but any page can post this message itself.
+    if (!silentPrintEnabled) return;
+
     const id = data.id;
     const fail = (code: string, message: string) =>
       settlePrinterRequest({ id, ok: false, code, message });

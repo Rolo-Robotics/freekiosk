@@ -17,7 +17,6 @@ import {
   ScheduleEventList,
   ManagedAppsSection,
   SettingsRadioGroup,
-  SettingsDropdown,
   EscPosPrinterSection,
 } from '../../../components/settings';
 import { ManagedApp } from '../../../types/managedApps';
@@ -88,8 +87,8 @@ interface GeneralTabProps {
   onPrintEnabledChange: (value: boolean) => void;
   printPaperSize: string;
   onPrintPaperSizeChange: (value: string) => void;
-  printDestinationMode: string;
-  onPrintDestinationModeChange: (value: string) => void;
+  silentPrintEnabled: boolean;
+  onSilentPrintEnabledChange: (value: boolean) => void;
   escPosWidthDots: number;
   onEscPosWidthDotsChange: (value: number) => void;
   escPosCut: boolean;
@@ -216,8 +215,8 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onPrintEnabledChange,
   printPaperSize,
   onPrintPaperSizeChange,
-  printDestinationMode,
-  onPrintDestinationModeChange,
+  silentPrintEnabled,
+  onSilentPrintEnabledChange,
   escPosWidthDots,
   onEscPosWidthDotsChange,
   escPosCut,
@@ -996,41 +995,6 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           {printEnabled && (
             <>
               <View style={styles.rotationSpacer} />
-              <SettingsDropdown
-                label="Print Destination Mode"
-                options={[
-                  {
-                    value: 'dialog',
-                    label: 'Print Dialog',
-                    description: 'Opens Android print dialog on window.print()',
-                  },
-                  {
-                    value: 'silent',
-                    label: 'Silent Print',
-                    description: 'Automatically starts printing based on pre-configured settings on window.print()',
-                  },
-                ]}
-                value={printDestinationMode}
-                onValueChange={onPrintDestinationModeChange}
-              />
-            </>
-          )}
-
-          {printEnabled && printDestinationMode === 'silent' && (
-            <EscPosPrinterSection
-              widthDots={escPosWidthDots}
-              onWidthDotsChange={onEscPosWidthDotsChange}
-              cut={escPosCut}
-              onCutChange={onEscPosCutChange}
-              feedLines={escPosFeedLines}
-              onFeedLinesChange={onEscPosFeedLinesChange}
-              origins={printOrigins}
-              onOriginsChange={onPrintOriginsChange}
-            />
-          )}
-
-          {printEnabled && printDestinationMode !== 'silent' && (
-            <>
               <SettingsRadioGroup
                 label="Default Paper Size"
                 options={[
@@ -1043,15 +1007,37 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
                 value={printPaperSize}
                 onValueChange={onPrintPaperSizeChange}
               />
-
-              <SettingsInfoBox variant="info">
-                <Text style={styles.infoText}>
-                  {'Web pages can trigger the Android print dialog via window.print().\n\n'}
-                  {'In Device Owner (kiosk) mode, the system print spooler is automatically whitelisted to allow the print dialog to appear.\n\n'}
-                  {'Supports WiFi, Bluetooth, USB printers, and Save as PDF.'}
-                </Text>
-              </SettingsInfoBox>
             </>
+          )}
+
+          {printEnabled && (
+            <SettingsInfoBox variant="info">
+              <Text style={styles.infoText}>
+                {'Web pages can trigger the Android print dialog via window.print().\n\n'}
+                {'In Device Owner (kiosk) mode, the system print spooler is automatically whitelisted to allow the print dialog to appear.\n\n'}
+                {'Supports WiFi, Bluetooth, USB printers, and Save as PDF.'}
+              </Text>
+            </SettingsInfoBox>
+          )}
+
+          <SettingsSwitch
+            label="Silent Print"
+            hint="Let web pages print to a USB ESC/POS printer with no dialog, via window.FreeKiosk.printer"
+            value={silentPrintEnabled}
+            onValueChange={onSilentPrintEnabledChange}
+          />
+
+          {silentPrintEnabled && (
+            <EscPosPrinterSection
+              widthDots={escPosWidthDots}
+              onWidthDotsChange={onEscPosWidthDotsChange}
+              cut={escPosCut}
+              onCutChange={onEscPosCutChange}
+              feedLines={escPosFeedLines}
+              onFeedLinesChange={onEscPosFeedLinesChange}
+              origins={printOrigins}
+              onOriginsChange={onPrintOriginsChange}
+            />
           )}
         </SettingsSection>
       )}
