@@ -209,7 +209,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [pdfViewerEnabled, setPdfViewerEnabled] = useState<boolean>(false);
   
   // Printing state
-  const [printEnabled, setPrintEnabled] = useState<boolean>(false);
+  const [windowPrintEnabled, setWindowPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
   const [silentPrintEnabled, setSilentPrintEnabled] = useState<boolean>(false);
   const [escPosWidthDots, setEscPosWidthDots] = useState<number>(384);
@@ -674,8 +674,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setPdfViewerEnabled(savedPdfViewerEnabled);
 
     // Printing setting
-    const savedPrintEnabled = await StorageService.getPrintEnabled();
-    setPrintEnabled(savedPrintEnabled);
+    const savedWindowPrintEnabled = await StorageService.getWindowPrintEnabled();
+    setWindowPrintEnabled(savedWindowPrintEnabled);
     const savedPrintPaperSize = await StorageService.getPrintPaperSize();
     setPrintPaperSize(savedPrintPaperSize);
     setSilentPrintEnabled(await StorageService.getSilentPrintEnabled());
@@ -1535,7 +1535,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     await StorageService.savePdfViewerEnabled(pdfViewerEnabled);
 
     // Save Printing setting
-    await StorageService.savePrintEnabled(printEnabled);
+    await StorageService.saveWindowPrintEnabled(windowPrintEnabled);
     await StorageService.savePrintPaperSize(printPaperSize);
     await StorageService.saveSilentPrintEnabled(silentPrintEnabled);
     await StorageService.saveEscPosWidthDots(escPosWidthDots);
@@ -1887,8 +1887,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onAutoReloadChange={setAutoReload}
             pdfViewerEnabled={pdfViewerEnabled}
             onPdfViewerEnabledChange={setPdfViewerEnabled}
-            printEnabled={printEnabled}
-            onPrintEnabledChange={setPrintEnabled}
+            windowPrintEnabled={windowPrintEnabled}
+            onWindowPrintEnabledChange={setWindowPrintEnabled}
             printPaperSize={printPaperSize}
             onPrintPaperSizeChange={setPrintPaperSize}
             silentPrintEnabled={silentPrintEnabled}

@@ -83,8 +83,8 @@ interface GeneralTabProps {
   onPdfViewerEnabledChange: (value: boolean) => void;
   
   // Printing (webview only)
-  printEnabled: boolean;
-  onPrintEnabledChange: (value: boolean) => void;
+  windowPrintEnabled: boolean;
+  onWindowPrintEnabledChange: (value: boolean) => void;
   printPaperSize: string;
   onPrintPaperSizeChange: (value: string) => void;
   silentPrintEnabled: boolean;
@@ -211,8 +211,8 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onAutoReloadChange,
   pdfViewerEnabled,
   onPdfViewerEnabledChange,
-  printEnabled,
-  onPrintEnabledChange,
+  windowPrintEnabled,
+  onWindowPrintEnabledChange,
   printPaperSize,
   onPrintPaperSizeChange,
   silentPrintEnabled,
@@ -986,13 +986,13 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
       {displayMode === 'webview' && (
         <SettingsSection title="Printing" icon="printer">
           <SettingsSwitch
-            label="Allow Printing"
+            label="Window Printing"
             hint="Enable window.print() support for web pages (label printers, receipts, etc.)"
-            value={printEnabled}
-            onValueChange={onPrintEnabledChange}
+            value={windowPrintEnabled}
+            onValueChange={onWindowPrintEnabledChange}
           />
           
-          {printEnabled && (
+          {windowPrintEnabled && (
             <>
               <View style={styles.rotationSpacer} />
               <SettingsRadioGroup
@@ -1010,7 +1010,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
             </>
           )}
 
-          {printEnabled && (
+          {windowPrintEnabled && (
             <SettingsInfoBox variant="info">
               <Text style={styles.infoText}>
                 {'Web pages can trigger the Android print dialog via window.print().\n\n'}
@@ -1021,7 +1021,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           )}
 
           <SettingsSwitch
-            label="Silent Print"
+            label="Silent Printing"
             hint="Let web pages print to a USB ESC/POS printer with no dialog, via window.FreeKiosk.printer"
             value={silentPrintEnabled}
             onValueChange={onSilentPrintEnabledChange}

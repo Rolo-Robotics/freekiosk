@@ -120,7 +120,7 @@ export const KEYS = {
   // PDF Viewer
   PDF_VIEWER_ENABLED: '@kiosk_pdf_viewer_enabled',
   // Printing
-  PRINT_ENABLED: '@kiosk_print_enabled',
+  WINDOW_PRINT_ENABLED: '@kiosk_print_enabled',
   PRINT_PAPER_SIZE: '@kiosk_print_paper_size',
   // Silent Print: window.FreeKiosk.printer drives an ESC/POS printer, independent of window.print()
   SILENT_PRINT_ENABLED: '@kiosk_silent_print_enabled',
@@ -526,7 +526,7 @@ export const StorageService = {
         // PDF Viewer
         KEYS.PDF_VIEWER_ENABLED,
         // Printing
-        KEYS.PRINT_ENABLED,
+        KEYS.WINDOW_PRINT_ENABLED,
         KEYS.SILENT_PRINT_ENABLED,
         KEYS.ESC_POS_WIDTH_DOTS,
         KEYS.ESC_POS_CUT,
@@ -2273,17 +2273,17 @@ export const StorageService = {
 
   // ============ PRINTING ============
 
-  savePrintEnabled: async (value: boolean): Promise<void> => {
+  saveWindowPrintEnabled: async (value: boolean): Promise<void> => {
     try {
-      await AsyncStorage.setItem(KEYS.PRINT_ENABLED, JSON.stringify(value));
+      await AsyncStorage.setItem(KEYS.WINDOW_PRINT_ENABLED, JSON.stringify(value));
     } catch (error) {
       console.error('Error saving print enabled:', error);
     }
   },
 
-  getPrintEnabled: async (): Promise<boolean> => {
+  getWindowPrintEnabled: async (): Promise<boolean> => {
     try {
-      const value = await AsyncStorage.getItem(KEYS.PRINT_ENABLED);
+      const value = await AsyncStorage.getItem(KEYS.WINDOW_PRINT_ENABLED);
       return value ? JSON.parse(value) : false;
     } catch (error) {
       console.error('Error getting print enabled:', error);
@@ -3282,7 +3282,7 @@ export const StorageService = {
         url: str(KEYS.URL),
         autoReload: bool(KEYS.AUTO_RELOAD),
         pdfViewerEnabled: bool(KEYS.PDF_VIEWER_ENABLED),
-        printEnabled: bool(KEYS.PRINT_ENABLED),
+        printEnabled: bool(KEYS.WINDOW_PRINT_ENABLED), // window.print(); name kept for existing exports
         printPaperSize: str(KEYS.PRINT_PAPER_SIZE, 'A4'),
         silentPrintEnabled: bool(KEYS.SILENT_PRINT_ENABLED),
         escPosWidthDots: num(KEYS.ESC_POS_WIDTH_DOTS, 384),
@@ -3487,7 +3487,7 @@ export const StorageService = {
       set(KEYS.URL, g.url);
       set(KEYS.AUTO_RELOAD, g.autoReload);
       set(KEYS.PDF_VIEWER_ENABLED, g.pdfViewerEnabled);
-      set(KEYS.PRINT_ENABLED, g.printEnabled);
+      set(KEYS.WINDOW_PRINT_ENABLED, g.printEnabled);
       set(KEYS.PRINT_PAPER_SIZE, g.printPaperSize);
       set(KEYS.SILENT_PRINT_ENABLED, g.silentPrintEnabled);
       set(KEYS.ESC_POS_WIDTH_DOTS, g.escPosWidthDots);

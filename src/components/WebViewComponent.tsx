@@ -42,7 +42,7 @@ interface WebViewComponentProps {
   urlFilterPatterns?: string[]; // URL patterns to filter
   urlFilterShowFeedback?: boolean; // Show feedback when URL is blocked
   pdfViewerEnabled?: boolean; // Enable inline PDF viewing via PDF.js
-  printEnabled?: boolean; // Enable window.print() interception for native printing
+  windowPrintEnabled?: boolean; // Enable window.print() interception for native printing
   printPaperSize?: string; // Default paper size: 'A4' | 'A5' | 'A3' | 'LETTER' | 'LEGAL'
   silentPrintEnabled?: boolean; // Inject window.FreeKiosk.printer, which drives an ESC/POS printer
   escPosWidthDots?: number; // Printable width in dots
@@ -86,7 +86,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   urlFilterPatterns,
   urlFilterShowFeedback = false,
   pdfViewerEnabled = false,
-  printEnabled = false,
+  windowPrintEnabled = false,
   printPaperSize = 'A4',
   silentPrintEnabled = false,
   escPosWidthDots = 384,
@@ -385,7 +385,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     }
 
     // Intercept window.print() to use native Android print (only when printing is enabled)
-    ${printEnabled ? `
+    ${windowPrintEnabled ? `
     window.print = function() {
       window.ReactNativeWebView.postMessage(JSON.stringify({
         type: 'PRINT_REQUEST',
@@ -1137,10 +1137,10 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
             return false;
           }
           
-          // data: URLs - allow when printing is enabled (some label/receipt sites
+          // data: URLs - allow when window.print() is enabled (some label/receipt sites
           // generate print content as data:text/html popups)
           if (urlLower.startsWith('data:')) {
-            if (printEnabled) {
+            if (windowPrintEnabled) {
               console.log('[FreeKiosk] Allowing data: URL (printing enabled)');
               return true;
             }

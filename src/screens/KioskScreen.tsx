@@ -212,7 +212,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [pdfViewerEnabled, setPdfViewerEnabled] = useState<boolean>(false);
   // #239: last value applied to the WebView, to know when a remount is actually needed.
   const pdfViewerEnabledRef = useRef<boolean>(false);
-  const [printEnabled, setPrintEnabled] = useState<boolean>(false);
+  const [windowPrintEnabled, setWindowPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
   const [silentPrintEnabled, setSilentPrintEnabled] = useState<boolean>(false);
   const [escPosWidthDots, setEscPosWidthDots] = useState<number>(384);
@@ -1915,8 +1915,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       
       
       // Load Printing setting
-      const savedPrintEnabled = bool(K.PRINT_ENABLED, false);
-      setPrintEnabled(savedPrintEnabled);
+      const savedWindowPrintEnabled = bool(K.WINDOW_PRINT_ENABLED, false);
+      setWindowPrintEnabled(savedWindowPrintEnabled);
       const savedPrintPaperSize = str(K.PRINT_PAPER_SIZE) ?? 'A4';
       setPrintPaperSize(savedPrintPaperSize);
       setSilentPrintEnabled(bool(K.SILENT_PRINT_ENABLED, false));
@@ -2876,7 +2876,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
               urlFilterPatterns={urlFilterEnabled ? urlFilterList : undefined}
               urlFilterShowFeedback={urlFilterShowFeedback}
               pdfViewerEnabled={pdfViewerEnabled}
-              printEnabled={printEnabled}
+              windowPrintEnabled={windowPrintEnabled}
               printPaperSize={printPaperSize}
               silentPrintEnabled={silentPrintEnabled}
               escPosWidthDots={escPosWidthDots}
