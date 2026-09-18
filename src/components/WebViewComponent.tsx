@@ -431,8 +431,8 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       window.FreeKiosk.version = 1;
       window.FreeKiosk.silentPrinter = {
         getStatus: function() { return call('getStatus'); },
-        printPage: function(jobName) {
-          return call('printPage', { jobName: jobName || document.title || '' });
+        print: function(jobName) {
+          return call('print', { jobName: jobName || document.title || '' });
         },
         printImage: function(base64) { return call('printImage', { base64: base64 }); }
       };
@@ -810,7 +810,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
       case 'getStatus':
         work = SilentPrintModule.status();
         break;
-      case 'printPage':
+      case 'print':
         work = SilentPrintModule.printPage(payload.jobName ?? null, options);
         break;
       case 'printImage':

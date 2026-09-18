@@ -219,7 +219,7 @@ const EscPosPrinterSection: React.FC<EscPosPrinterSectionProps> = ({
 
       <SettingsInfoBox variant="info">
         <Text style={styles.infoText}>
-          {'Web pages print silently by calling window.FreeKiosk.silentPrinter.printPage() or printImage(). printPage() lays the page out so one CSS pixel is one dot.\n\n'}
+          {'Web pages print silently by calling window.FreeKiosk.silentPrinter.print() or printImage(). print() lays the page out so one CSS pixel is one dot.\n\n'}
           {'window.print() is not affected: it opens the Android print dialog when Allow Printing is on, and does nothing otherwise.\n\n'}
           {'For access that survives reboots: plug the printer in, then choose FreeKiosk and tick "Always open". The button above only grants access until the printer is unplugged, and lock task mode suppresses that dialog entirely.\n\n'}
           {'Printers exposing a vendor-specific USB interface instead of the standard printer class still print, but cannot report paper level.'}

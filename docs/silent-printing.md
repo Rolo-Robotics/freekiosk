@@ -62,13 +62,13 @@ the printer actually addresses, so no paper size or resolution is assumed anywhe
 
 ## Printing From a Web Page
 
-Call `window.FreeKiosk.silentPrinter.printPage()`. The page's own print stylesheet is what lands on paper,
+Call `window.FreeKiosk.silentPrinter.print()`. The page's own print stylesheet is what lands on paper,
 including its fonts, its language and any QR codes.
 
 `window.print()` is separate and unchanged: with **Allow Printing** on it opens the Android print
 dialog, and otherwise it does nothing. A page can use both, A4 through the dialog and receipts
 through Silent Print, but both render the same `@media print` stylesheet. Switch it to the receipt
-layout before calling `printPage()`, for example with a class on `<html>`, or render the receipt
+layout before calling `silentPrinter.print()`, for example with a class on `<html>`, or render the receipt
 yourself and call `printImage()`.
 
 The page is laid out so that **one CSS pixel is one printer dot**, so design against the configured
@@ -102,7 +102,7 @@ window.addEventListener('freekiosk:ready', async () => {
   const { state, paper, printer } = await window.FreeKiosk.silentPrinter.getStatus();
   if (state !== 'ready') return;
 
-  await window.FreeKiosk.silentPrinter.printPage('Test print');
+  await window.FreeKiosk.silentPrinter.print('Test print');
 });
 ```
 
@@ -112,10 +112,10 @@ wait for the `freekiosk:ready` event.
 | Method | Description |
 |--------|-------------|
 | `getStatus()` | Resolves with `{ state, paper, printer }` |
-| `printPage(jobName?)` | Prints the current page through its print stylesheet |
+| `print(jobName?)` | Prints the current page through its print stylesheet, as `window.print()` would, with no dialog |
 | `printImage(base64)` | Prints a PNG or JPEG, with or without a `data:` prefix |
 
-`printPage` and `printImage` resolve `true` once the printer has accepted every byte.
+`print` and `printImage` resolve `true` once the printer has accepted every byte.
 
 `state` is one of `ready`, `no_printer`, `no_permission`, `paper_out` or `error`. `paper` is `ok`,
 `out` or `unknown`. `unknown` means the paper state could not be read, and does not block printing.
