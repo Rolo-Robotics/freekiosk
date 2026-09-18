@@ -1022,7 +1022,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
 
           <SettingsSwitch
             label="Silent Printing"
-            hint="Let web pages print to a USB ESC/POS printer with no dialog, via window.FreeKiosk.printer"
+            hint="Let web pages print to a USB ESC/POS printer with no dialog, via window.FreeKiosk.silentPrinter"
             value={silentPrintEnabled}
             onValueChange={onSilentPrintEnabledChange}
           />

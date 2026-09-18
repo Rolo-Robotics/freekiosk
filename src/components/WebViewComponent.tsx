@@ -44,7 +44,7 @@ interface WebViewComponentProps {
   pdfViewerEnabled?: boolean; // Enable inline PDF viewing via PDF.js
   windowPrintEnabled?: boolean; // Enable window.print() interception for native printing
   printPaperSize?: string; // Default paper size: 'A4' | 'A5' | 'A3' | 'LETTER' | 'LEGAL'
-  silentPrintEnabled?: boolean; // Inject window.FreeKiosk.printer, which drives an ESC/POS printer
+  silentPrintEnabled?: boolean; // Inject window.FreeKiosk.silentPrinter, which drives an ESC/POS printer
   escPosWidthDots?: number; // Printable width in dots
   escPosCut?: boolean;
   escPosFeedLines?: number;
@@ -395,7 +395,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     };
     ` : '// Printing disabled - window.print() not intercepted'}
 
-    // Silent Print: window.FreeKiosk.printer drives the ESC/POS printer with no dialog.
+    // Silent Print: window.FreeKiosk.silentPrinter drives the ESC/POS printer with no dialog.
     // window.print() is left to the block above.
     ${silentPrintEnabled ? `
     (function() {
@@ -429,8 +429,8 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
 
       window.FreeKiosk = window.FreeKiosk || {};
       window.FreeKiosk.version = 1;
-      window.FreeKiosk.printer = {
-        status: function() { return call('status'); },
+      window.FreeKiosk.silentPrinter = {
+        getStatus: function() { return call('getStatus'); },
         printPage: function(jobName) {
           return call('printPage', { jobName: jobName || document.title || '' });
         },
@@ -807,7 +807,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     const payload = data.data || {};
     let work: Promise<unknown>;
     switch (data.op) {
-      case 'status':
+      case 'getStatus':
         work = SilentPrintModule.status();
         break;
       case 'printPage':

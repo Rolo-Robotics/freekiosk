@@ -62,7 +62,7 @@ the printer actually addresses, so no paper size or resolution is assumed anywhe
 
 ## Printing From a Web Page
 
-Call `window.FreeKiosk.printer.printPage()`. The page's own print stylesheet is what lands on paper,
+Call `window.FreeKiosk.silentPrinter.printPage()`. The page's own print stylesheet is what lands on paper,
 including its fonts, its language and any QR codes.
 
 `window.print()` is separate and unchanged: with **Allow Printing** on it opens the Android print
@@ -93,16 +93,16 @@ background images, and text large enough to stay legible at one dot per pixel.
 
 ## The JavaScript API
 
-`window.FreeKiosk.printer` is injected when **Silent Print** is on. Every call returns a promise, so
-a page knows whether a print went through, and `status()` lets it check for paper before it promises
+`window.FreeKiosk.silentPrinter` is injected when **Silent Print** is on. Every call returns a promise, so
+a page knows whether a print went through, and `getStatus()` lets it check for paper before it promises
 a ticket.
 
 ```js
 window.addEventListener('freekiosk:ready', async () => {
-  const { state, paper, printer } = await window.FreeKiosk.printer.status();
+  const { state, paper, printer } = await window.FreeKiosk.silentPrinter.getStatus();
   if (state !== 'ready') return;
 
-  await window.FreeKiosk.printer.printPage('Test print');
+  await window.FreeKiosk.silentPrinter.printPage('Test print');
 });
 ```
 
@@ -111,7 +111,7 @@ wait for the `freekiosk:ready` event.
 
 | Method | Description |
 |--------|-------------|
-| `status()` | Resolves with `{ state, paper, printer }` |
+| `getStatus()` | Resolves with `{ state, paper, printer }` |
 | `printPage(jobName?)` | Prints the current page through its print stylesheet |
 | `printImage(base64)` | Prints a PNG or JPEG, with or without a `data:` prefix |
 
@@ -125,7 +125,7 @@ Rejections carry a `code`: `NO_PRINTER`, `NO_PERMISSION`, `PAPER_OUT`, `OPEN_FAI
 `BAD_IMAGE`, `PAGE_RENDER_FAILED`, `NO_WEBVIEW`, `ORIGIN_NOT_ALLOWED`, or `ERROR` for anything
 unexpected.
 
-**Restrict printing by origin** in Settings limits `window.FreeKiosk.printer`, `status()` included,
+**Restrict printing by origin** in Settings limits `window.FreeKiosk.silentPrinter`, `getStatus()` included,
 to the origins you list. Only the scheme, host and port of each entry are compared. Turned on with
 nothing listed, no page can print. Turned off, any page the kiosk displays may print. It does not
 cover `window.print()`, whose dialog needs someone to confirm it anyway.

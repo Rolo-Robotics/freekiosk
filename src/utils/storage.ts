@@ -122,7 +122,7 @@ export const KEYS = {
   // Printing
   WINDOW_PRINT_ENABLED: '@kiosk_print_enabled',
   PRINT_PAPER_SIZE: '@kiosk_print_paper_size',
-  // Silent Print: window.FreeKiosk.printer drives an ESC/POS printer, independent of window.print()
+  // Silent Print: window.FreeKiosk.silentPrinter drives an ESC/POS printer, independent of window.print()
   SILENT_PRINT_ENABLED: '@kiosk_silent_print_enabled',
   // Origins allowed to use Silent Print (JSON): null = any page, [] = none
   PRINT_ORIGINS: '@kiosk_print_origins',
