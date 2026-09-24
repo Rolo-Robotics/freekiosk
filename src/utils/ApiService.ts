@@ -12,7 +12,7 @@ import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 import { httpServer } from './HttpServerModule';
 import { mqttClient } from './MqttModule';
 import { StorageService } from './storage';
-import { getSecureMqttPassword } from './secureStorage';
+import { getSecureMqttPassword, readSecureApiKey } from './secureStorage';
 
 const { HttpServerModule, MqttModule, SoundPlayer } = NativeModules;
 
@@ -151,8 +151,24 @@ class ApiServiceClass {
       }
 
       const port = await StorageService.getRestApiPort();
-      const apiKey = await StorageService.getRestApiKey();
+      const { value: apiKey, readFailed } = await readSecureApiKey();
       const allowControl = await StorageService.getRestApiAllowControl();
+
+      // Fail closed. KioskHttpServer skips its auth check entirely when no key is set,
+      // which is the right behaviour for someone who deliberately runs without one. But
+      // a key we could not read is not a key that is not there: on a device whose
+      // Keystore is broken (#258) every read throws, and starting here would put an
+      // unauthenticated server on the LAN for an owner who had set a key and had no way
+      // of knowing. Refusing to start is visible; serving everything is not.
+      if (readFailed) {
+        console.error(
+          'ApiService: refusing to start the REST server. The API key could not be read ' +
+          'from secure storage, and starting without it would serve every endpoint ' +
+          'unauthenticated on the local network. Re-enter the key in Settings > API, or ' +
+          'clear it to run deliberately without authentication.',
+        );
+        return;
+      }
 
       const result = await httpServer.startServer(port, apiKey || null, allowControl);
       console.log(`ApiService: Server started on ${result.ip}:${result.port}`);

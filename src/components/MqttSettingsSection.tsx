@@ -303,7 +303,20 @@ export const MqttSettingsSection: React.FC<MqttSettingsSectionProps> = ({
 
   const handlePasswordChange = async (value: string) => {
     setPassword(value);
-    await saveSecureMqttPassword(value);
+    // The return value used to be thrown away. When secure storage fails (#258) nothing
+    // was written, yet the field kept showing what had just been typed, so the password
+    // looked saved until the screen was reloaded and the broker answered NOT_AUTHORIZED.
+    const saved = await saveSecureMqttPassword(value);
+    if (!saved && value) {
+      Alert.alert(
+        'Password not saved',
+        'The MQTT password could not be written to secure storage on this device, so ' +
+        'the broker will refuse the connection. This happens on firmwares whose Android ' +
+        'Keystore is broken. The field is cleared so it does not show a password that ' +
+        'was never stored.',
+      );
+      setPassword('');
+    }
     onSettingsChanged?.();
   };
 

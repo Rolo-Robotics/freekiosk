@@ -1461,7 +1461,18 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     await StorageService.saveCustomUserAgent(customUserAgent);
     await StorageService.savePauseWebMediaWhenHidden(pauseWebMediaWhenHidden);
     await StorageService.saveHttpBasicAuthUsername(basicAuthUsername);
-    await saveSecureBasicAuthPassword(basicAuthPassword);
+    // Checked rather than discarded: on a device whose Keystore is broken (#258) this
+    // returns false, and saving the whole settings screen used to report success while
+    // the password had gone nowhere.
+    const basicAuthSaved = await saveSecureBasicAuthPassword(basicAuthPassword);
+    if (!basicAuthSaved && basicAuthPassword) {
+      Alert.alert(
+        'Password not saved',
+        'The HTTP Basic Auth password could not be written to secure storage on this ' +
+        'device. Every other setting on this screen was saved. This happens on firmwares ' +
+        'whose Android Keystore is broken.',
+      );
+    }
     await StorageService.saveAllowPowerButton(allowPowerButton);
     await StorageService.saveBlockFactoryReset(blockFactoryReset);
     await StorageService.saveAllowRemoteScreenshot(allowRemoteScreenshot);

@@ -1604,16 +1604,30 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
           console.log('[KioskScreen] Found pending ADB config, applying to AsyncStorage...');
           const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
           const entries: [string, string][] = [];
+          // Secrets that failed to reach secure storage. These used to be logged as
+          // successes: the save returned false, the return value was thrown away, and the
+          // line below said it had worked. On a device whose Keystore is broken (#258)
+          // that cost the reporter hours, because the app, the settings screen and the
+          // logs all agreed and only the MQTT broker disagreed.
+          const failedSecrets: string[] = [];
           for (const [key, value] of Object.entries(pendingConfig)) {
             if (typeof value === 'string') {
               if (key === '@kiosk_pin') {
                 // PIN must be saved to Keystore (not just AsyncStorage)
-                await saveSecurePin(value);
-                console.log('[KioskScreen] PIN saved to secure Keystore via pending ADB config');
+                if (await saveSecurePin(value)) {
+                  console.log('[KioskScreen] PIN saved to secure Keystore via pending ADB config');
+                } else {
+                  failedSecrets.push('PIN');
+                  console.error('[KioskScreen] PIN could NOT be saved to secure storage (see #258)');
+                }
               } else if (key === '@mqtt_password_pending') {
                 // MQTT password must be saved to Keychain (not AsyncStorage)
-                await saveSecureMqttPassword(value);
-                console.log('[KioskScreen] MQTT password saved to secure Keychain via pending ADB config');
+                if (await saveSecureMqttPassword(value)) {
+                  console.log('[KioskScreen] MQTT password saved to secure Keychain via pending ADB config');
+                } else {
+                  failedSecrets.push('MQTT password');
+                  console.error('[KioskScreen] MQTT password could NOT be saved to secure storage (see #258)');
+                }
               } else {
                 entries.push([key, value]);
               }
@@ -1623,8 +1637,20 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
             await AsyncStorage.multiSet(entries);
             console.log('[KioskScreen] Applied', entries.length, 'pending ADB config entries to AsyncStorage');
           }
-          await KioskModule.clearPendingAdbConfig();
-          console.log('[KioskScreen] Pending ADB config cleared');
+          // Only discard the pending config once everything in it landed. Clearing it
+          // unconditionally meant a failed save also threw away the value, so re-running
+          // the same ADB command produced the same silent failure with nothing left to
+          // retry from. Reported with the rest of #258.
+          if (failedSecrets.length > 0) {
+            console.error(
+              `[KioskScreen] Keeping the pending ADB config: ${failedSecrets.join(', ')} ` +
+              'could not be stored. Fix secure storage on this device and reboot, or set ' +
+              'the value from the settings screen.',
+            );
+          } else {
+            await KioskModule.clearPendingAdbConfig();
+            console.log('[KioskScreen] Pending ADB config cleared');
+          }
         }
       } catch (pendingError) {
         console.log('[KioskScreen] No pending ADB config or error:', pendingError);
