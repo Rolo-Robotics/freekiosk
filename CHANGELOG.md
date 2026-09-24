@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+***
+
+## [2.0.0-beta.4] - 2026-09-24
+
 ### Added
 - 📶 **A Wi-Fi network can be pushed from FreeKiosk Cloud and saved for later, without the tablet switching to it.** For kiosks spread over remote sites, one router whose password changes means a drive to every tablet behind it. The new `add_wifi_network` cloud command stages a network while the tablets are still online, and each tablet falls over to it on its own when its current network goes away.
 
