@@ -263,6 +263,38 @@ Every key below is a straight passthrough: the value you pass is stored as-is.
 | `--es screensaver_delay "300"` | Inactivity before the screensaver, in seconds |
 | `--es screensaver_brightness "0"` | Brightness while the screensaver is showing |
 
+**Screen scheduler rule format**
+
+`screen_scheduler_rules` takes a JSON array of rules. Each rule:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `id` | string | Any unique identifier |
+| `name` | string | Shown in the app's rule list |
+| `enabled` | boolean | A disabled rule is kept but ignored |
+| `days` | number[] | `0` = Sunday, `1` = Monday … `6` = Saturday |
+| `sleepTime` | `"HH:MM"` | 24-hour time the screen turns **off** |
+| `wakeTime` | `"HH:MM"` | 24-hour time the screen turns **on** |
+
+Times are in the tablet's own time zone.
+
+When `sleepTime` is **later** than `wakeTime`, the window runs overnight and `days` names
+the evening it **starts**. So `[1,2,3,4,5]` with `sleepTime "17:00"` and `wakeTime "07:00"`
+turns the screen off every weekday evening and back on the next morning, and leaves it on
+all weekend: Saturday is not listed, so no window starts on Saturday evening, and the one
+that started on Friday ends on Saturday at 07:00. List `0` and `6` as well for every night.
+
+When `sleepTime` is earlier than `wakeTime`, the window sits within the day (a lunch
+break, say) on the listed days. Equal times, or a time that is not `HH:MM`, and the rule is
+ignored.
+
+```bash
+adb shell am start -n com.freekiosk/.MainActivity   --es pin "1234"   --ez screen_scheduler_enabled true   --es screen_scheduler_rules '[{"id":"office","name":"Office hours","enabled":true,"days":[1,2,3,4,5],"sleepTime":"17:00","wakeTime":"07:00"}]'
+```
+
+This is the format `src/types/screenScheduler.ts` implements, and the one the app's own rule
+editor writes, so a rule built on a tablet and read back from the cloud is a valid example.
+
 **Status bar**
 
 | Parameter | Description |

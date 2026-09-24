@@ -842,7 +842,9 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           label=""
           value={pin}
           onChangeText={onPinChange}
-          placeholder={isPinConfigured && !pinModeChanged ? '••••' : '1234'}
+          // Not '1234': greyed, it read as a PIN already filled in, and a beta tester
+          // hunted for a missing password in a field that looked set.
+          placeholder={isPinConfigured && !pinModeChanged ? '••••' : 'Not set: enter a PIN'}
           keyboardType={pinMode === 'alphanumeric' ? 'default' : 'numeric'}
           secureTextEntry
           maxLength={pinMode === 'alphanumeric' ? undefined : 6}

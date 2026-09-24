@@ -10,7 +10,8 @@ import {
   ScrollView,
   Linking,
   NativeModules,
-  findNodeHandle
+  findNodeHandle,
+  DeviceEventEmitter,
 } from 'react-native';
 
 const { HttpServerModule } = NativeModules;
@@ -22,6 +23,9 @@ import { WebView } from 'react-native-webview';
 import type { WebViewErrorEvent, ShouldStartLoadRequest, WebViewRenderProcessGoneEvent } from 'react-native-webview/lib/WebViewTypes';
 import { useNavigation } from '@react-navigation/native';
 import PrintModule from '../utils/PrintModule';
+import { CLOUD_ENABLED } from '../config/features';
+import { CloudSyncService, PROVISIONING_STATUS_EVENT } from '../utils/CloudSyncService';
+import type { ProvisioningStatus } from '../utils/CloudSyncService';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -106,6 +110,18 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   const blockedUrlTimerRef = useRef<any>(null);
   const isGoingBackRef = useRef<boolean>(false); // Prevent goBack loop for URL filter
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Zero-touch cloud enrolment state, shown on the welcome screen. A QR-provisioned tablet
+  // that is Device Owner but failed to enrol used to sit here in silence; see
+  // ProvisioningStatus in CloudSyncService.
+  const [provisioning, setProvisioning] = useState<ProvisioningStatus>(
+    () => (CLOUD_ENABLED ? CloudSyncService.getProvisioningStatus() : { state: 'none' }),
+  );
+  React.useEffect(() => {
+    if (!CLOUD_ENABLED) return;
+    const sub = DeviceEventEmitter.addListener(PROVISIONING_STATUS_EVENT, setProvisioning);
+    return () => sub.remove();
+  }, []);
   const loadingTimeoutRef = useRef<any>(null);
   // Last top-frame (main document) URL requested — used to distinguish a fatal
   // main-page HTTP error from a harmless sub-resource error (favicon, analytics…).
@@ -893,6 +909,19 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
               />
             </View>
 
+            {/* Cloud enrolment state for a QR-provisioned device */}
+            {provisioning.state !== 'none' && (
+              <View style={styles.provisioningBox}>
+                <Text style={styles.provisioningText}>
+                  {provisioning.state === 'enrolling'
+                    ? `Connecting to FreeKiosk Cloud… (attempt ${provisioning.attempts})`
+                    : provisioning.state === 'retrying'
+                      ? `Cannot reach FreeKiosk Cloud yet. Retrying every 30 seconds (attempt ${provisioning.attempts}).`
+                      : `Cloud enrollment failed: ${provisioning.error}. Enter a new token in Settings > Cloud.`}
+                </Text>
+              </View>
+            )}
+
             {/* Action Button */}
             <TouchableOpacity
               style={[styles.setupButton, styles.rowCenter]}
@@ -1332,6 +1361,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '500',
     flex: 1,
+  },
+  provisioningBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginBottom: 16,
+    maxWidth: 480,
+  },
+  provisioningText: {
+    color: '#ffffff',
+    fontSize: 14,
+    textAlign: 'center',
   },
   setupButton: {
     backgroundColor: '#fff',

@@ -16,7 +16,10 @@ import {
   Modal,
   StyleSheet,
   BackHandler,
+  DeviceEventEmitter,
 } from 'react-native';
+import { CLOUD_ENABLED } from '../../config/features';
+import { CONFIG_UPDATED_EVENT } from '../../utils/CloudSyncService';
 import CookieManager from '@react-native-cookies/cookies';
 import { Camera } from 'react-native-vision-camera';
 import { StorageService } from '../../utils/storage';
@@ -303,6 +306,27 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     checkDeviceOwner();
     loadCurrentVersion();
     checkLightSensor();
+  }, []);
+
+  // A config pushed from the cloud while this screen is open used to leave it showing
+  // the old values, so an operator concluded the push had failed when it had not.
+  // Reloading in their back would throw away whatever they are typing, since this screen
+  // does not track unsaved edits, so ask. Keeping the edits and saving them later is a
+  // local edit like any other, and the regular sync takes it from there.
+  useEffect(() => {
+    if (!CLOUD_ENABLED) return;
+    const sub = DeviceEventEmitter.addListener(CONFIG_UPDATED_EVENT, () => {
+      Alert.alert(
+        'Configuration updated',
+        'FreeKiosk Cloud pushed a new configuration while this screen was open, so the values shown here are out of date.',
+        [
+          { text: 'Keep my edits', style: 'cancel' },
+          { text: 'Reload', onPress: () => { loadSettings(); } },
+        ],
+      );
+    });
+    return () => sub.remove();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Block Android back gesture/button on Settings screen to prevent PIN bypass (#93)
@@ -1341,7 +1365,14 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
         return;
       }
     } else if (!isPinConfigured && !pin) {
-      Alert.alert('Error', 'Please enter a password');
+      // Save can be pressed from any tab, and the PIN lives on General. "Please enter a
+      // password" named neither, so an operator saving from Display had nothing to go
+      // on. Say where, and take them there.
+      Alert.alert(
+        'PIN required',
+        'Set the PIN in General > Password before saving. It protects the way out of kiosk mode.',
+        [{ text: 'Go to General', onPress: () => setActiveTab('general') }],
+      );
       return;
     }
 
