@@ -160,6 +160,18 @@ export const settingsStyles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
   },
+
+  modalCancelButton: {
+    marginTop: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+  },
+
+  modalCancelText: {
+    ...Typography.body,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
   
   // App picker modal
   appPickerContainer: {

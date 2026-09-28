@@ -1401,7 +1401,19 @@
       "fileAccessOffTitle": "Accès aux fichiers désactivé",
       "fileAccessOffMessage": "Pour ouvrir un fichier local, activez d'abord Général > Lecteur PDF > Lecteur PDF intégré. C'est ce réglage qui donne au navigateur l'accès aux fichiers de l'appareil.",
       "passwordNotSavedTitle": "Mot de passe non enregistré",
-      "basicAuthNotSavedMessage": "Le mot de passe HTTP Basic Auth n'a pas pu être écrit dans le stockage sécurisé de cet appareil. Tous les autres réglages de cet écran ont été enregistrés. Cela arrive sur les firmwares dont le Keystore Android est défaillant."
+      "basicAuthNotSavedMessage": "Le mot de passe HTTP Basic Auth n'a pas pu être écrit dans le stockage sécurisé de cet appareil. Tous les autres réglages de cet écran ont été enregistrés. Cela arrive sur les firmwares dont le Keystore Android est défaillant.",
+      "downloadProgress": "{{percent}} % ({{done}} / {{total}} Mo)",
+      "downloadWait": {
+        "pending": "En attente du démarrage du téléchargement par Android…",
+        "waiting_for_network": "En attente d'une connexion réseau…",
+        "queued_for_wifi": "En attente d'une connexion Wi-Fi…",
+        "waiting_to_retry": "Connexion perdue, Android va réessayer…",
+        "paused": "Téléchargement mis en pause par Android…"
+      },
+      "downloadStalledTitle": "Téléchargement bloqué",
+      "downloadStalledMessage": "La mise à jour n'a rien téléchargé pendant 90 secondes, elle a donc été arrêtée. Vérifiez la connexion réseau et réessayez.",
+      "installFailedTitle": "Mise à jour non installée",
+      "installFailedMessage": "La mise à jour a été téléchargée, mais Android a refusé de l'installer : {{message}}"
     }
   }
 }

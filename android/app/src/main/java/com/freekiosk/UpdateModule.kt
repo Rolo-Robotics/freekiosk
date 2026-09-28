@@ -13,6 +13,7 @@ import android.os.Environment
 import android.provider.Settings
 import androidx.core.content.FileProvider
 import com.facebook.react.bridge.*
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
@@ -36,6 +37,23 @@ class UpdateModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
 
     private var downloadId: Long = -1
     private var updatePromise: Promise? = null
+
+    // #274: the download used to be followed only through ACTION_DOWNLOAD_COMPLETE. When
+    // DownloadManager never finishes (waiting for a network, queued, the download provider
+    // restricted), that broadcast never comes and the settings screen sat on its
+    // "Downloading" dialog for ever, with no progress and no way to close it. A poll reports
+    // progress, gives up on a download that stops moving, and still handles completion if
+    // the broadcast is missed.
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var downloadPoll: Runnable? = null
+    private var downloadHandled = false
+    private var lastBytes = -1L
+    private var lastProgressAt = 0L
+
+    companion object {
+        private const val POLL_INTERVAL_MS = 1000L
+        private const val STALL_TIMEOUT_MS = 90_000L
+    }
 
     @ReactMethod
     fun getCurrentVersion(promise: Promise) {
@@ -284,6 +302,10 @@ class UpdateModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
             }
             
             android.util.Log.d("UpdateModule", "Download started with ID: $downloadId")
+            downloadHandled = false
+            lastBytes = -1L
+            lastProgressAt = System.currentTimeMillis()
+            startDownloadPoll()
         } catch (e: Exception) {
             android.util.Log.e("UpdateModule", "Failed to start download: ${e.message}")
             promise.reject("ERROR", "Failed to start download: ${e.message}")
@@ -295,95 +317,213 @@ class UpdateModule(reactContext: ReactApplicationContext) : ReactContextBaseJava
             val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) ?: -1
             if (id == downloadId) {
                 android.util.Log.d("UpdateModule", "Download completed with ID: $id")
+                finishDownload()
+            }
+        }
+    }
+
+    /** Handles a finished download, from the broadcast or from the poll, exactly once. */
+    private fun finishDownload() {
+        if (downloadHandled) return
+        downloadHandled = true
+        stopDownloadPoll()
+        try {
+            val downloadManager = reactApplicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            
+            // Vérifier le statut du téléchargement
+            val query = DownloadManager.Query().setFilterById(downloadId)
+            val cursor = downloadManager.query(query)
+            
+            if (cursor.moveToFirst()) {
+                val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                val status = cursor.getInt(statusIndex)
                 
-                try {
-                    val downloadManager = reactApplicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                    
-                    // Vérifier le statut du téléchargement
-                    val query = DownloadManager.Query().setFilterById(downloadId)
-                    val cursor = downloadManager.query(query)
-                    
-                    if (cursor.moveToFirst()) {
-                        val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                        val status = cursor.getInt(statusIndex)
+                when (status) {
+                    DownloadManager.STATUS_SUCCESSFUL -> {
+                        android.util.Log.d("UpdateModule", "Download successful")
                         
-                        when (status) {
-                            DownloadManager.STATUS_SUCCESSFUL -> {
-                                android.util.Log.d("UpdateModule", "Download successful")
-                                
-                                // Vérifier les informations du fichier téléchargé
-                                val mimeIndex = cursor.getColumnIndex(DownloadManager.COLUMN_MEDIA_TYPE)
-                                val sizeIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-                                val uriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
-                                
-                                val mimeType = if (mimeIndex >= 0) cursor.getString(mimeIndex) else "unknown"
-                                val fileSize = if (sizeIndex >= 0) cursor.getLong(sizeIndex) else -1L
-                                val localUri = if (uriIndex >= 0) cursor.getString(uriIndex) else "unknown"
-                                
-                                android.util.Log.d("UpdateModule", "Downloaded file info:")
-                                android.util.Log.d("UpdateModule", "  - MIME type: $mimeType")
-                                android.util.Log.d("UpdateModule", "  - File size: $fileSize bytes")
-                                android.util.Log.d("UpdateModule", "  - Local URI: $localUri")
-                                
-                                // Vérifier que le fichier n'est pas trop petit (un HTML ferait < 50KB)
-                                if (fileSize > 0 && fileSize < 50000) {
-                                    android.util.Log.e("UpdateModule", "Downloaded file too small ($fileSize bytes), probably not a valid APK")
-                                    updatePromise?.reject("ERROR", "Downloaded file is too small ($fileSize bytes). Probably got an HTML page instead of APK.")
-                                    cursor.close()
-                                    return
-                                }
-                                
-                                val uri = downloadManager.getUriForDownloadedFile(downloadId)
-                                
-                                if (uri != null) {
-                                    android.util.Log.d("UpdateModule", "Installing APK from: $uri")
-                                    installApk(uri)
-                                    updatePromise?.resolve(true)
-                                } else {
-                                    android.util.Log.e("UpdateModule", "Failed to get downloaded file URI")
-                                    updatePromise?.reject("ERROR", "Failed to get downloaded file URI")
-                                }
-                            }
-                            DownloadManager.STATUS_FAILED -> {
-                                val reasonIndex = cursor.getColumnIndex(DownloadManager.COLUMN_REASON)
-                                val reason = cursor.getInt(reasonIndex)
-                                val reasonText = when (reason) {
-                                    DownloadManager.ERROR_CANNOT_RESUME -> "Cannot resume download"
-                                    DownloadManager.ERROR_DEVICE_NOT_FOUND -> "No external storage device found"
-                                    DownloadManager.ERROR_FILE_ALREADY_EXISTS -> "File already exists"
-                                    DownloadManager.ERROR_FILE_ERROR -> "Storage issue"
-                                    DownloadManager.ERROR_HTTP_DATA_ERROR -> "HTTP data error"
-                                    DownloadManager.ERROR_INSUFFICIENT_SPACE -> "Insufficient storage space"
-                                    DownloadManager.ERROR_TOO_MANY_REDIRECTS -> "Too many redirects"
-                                    DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> "Unhandled HTTP response code"
-                                    DownloadManager.ERROR_UNKNOWN -> "Unknown error"
-                                    else -> "Error code: $reason"
-                                }
-                                android.util.Log.e("UpdateModule", "Download failed: $reasonText")
-                                updatePromise?.reject("ERROR", "Download failed: $reasonText")
-                            }
-                            else -> {
-                                android.util.Log.e("UpdateModule", "Download status: $status")
-                                updatePromise?.reject("ERROR", "Unexpected download status: $status")
-                            }
+                        // Vérifier les informations du fichier téléchargé
+                        val mimeIndex = cursor.getColumnIndex(DownloadManager.COLUMN_MEDIA_TYPE)
+                        val sizeIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                        val uriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
+                        
+                        val mimeType = if (mimeIndex >= 0) cursor.getString(mimeIndex) else "unknown"
+                        val fileSize = if (sizeIndex >= 0) cursor.getLong(sizeIndex) else -1L
+                        val localUri = if (uriIndex >= 0) cursor.getString(uriIndex) else "unknown"
+                        
+                        android.util.Log.d("UpdateModule", "Downloaded file info:")
+                        android.util.Log.d("UpdateModule", "  - MIME type: $mimeType")
+                        android.util.Log.d("UpdateModule", "  - File size: $fileSize bytes")
+                        android.util.Log.d("UpdateModule", "  - Local URI: $localUri")
+                        
+                        // Vérifier que le fichier n'est pas trop petit (un HTML ferait < 50KB)
+                        if (fileSize > 0 && fileSize < 50000) {
+                            android.util.Log.e("UpdateModule", "Downloaded file too small ($fileSize bytes), probably not a valid APK")
+                            updatePromise?.reject("ERROR", "Downloaded file is too small ($fileSize bytes). Probably got an HTML page instead of APK.")
+                            cursor.close()
+                            return
                         }
-                    } else {
-                        android.util.Log.e("UpdateModule", "Download query returned no results")
-                        updatePromise?.reject("ERROR", "Download not found in download manager")
+                        
+                        val uri = downloadManager.getUriForDownloadedFile(downloadId)
+                        
+                        if (uri != null) {
+                            android.util.Log.d("UpdateModule", "Installing APK from: $uri")
+                            installApk(uri)
+                            updatePromise?.resolve(true)
+                        } else {
+                            android.util.Log.e("UpdateModule", "Failed to get downloaded file URI")
+                            updatePromise?.reject("ERROR", "Failed to get downloaded file URI")
+                        }
                     }
-                    cursor.close()
-                } catch (e: Exception) {
-                    android.util.Log.e("UpdateModule", "Error processing download: ${e.message}", e)
-                    updatePromise?.reject("ERROR", "Failed to process download: ${e.message}")
-                } finally {
-                    updatePromise = null
-                    try {
-                        reactApplicationContext.unregisterReceiver(this)
-                    } catch (e: Exception) {
-                        // Already unregistered
+                    DownloadManager.STATUS_FAILED -> {
+                        val reasonIndex = cursor.getColumnIndex(DownloadManager.COLUMN_REASON)
+                        val reason = cursor.getInt(reasonIndex)
+                        val reasonText = when (reason) {
+                            DownloadManager.ERROR_CANNOT_RESUME -> "Cannot resume download"
+                            DownloadManager.ERROR_DEVICE_NOT_FOUND -> "No external storage device found"
+                            DownloadManager.ERROR_FILE_ALREADY_EXISTS -> "File already exists"
+                            DownloadManager.ERROR_FILE_ERROR -> "Storage issue"
+                            DownloadManager.ERROR_HTTP_DATA_ERROR -> "HTTP data error"
+                            DownloadManager.ERROR_INSUFFICIENT_SPACE -> "Insufficient storage space"
+                            DownloadManager.ERROR_TOO_MANY_REDIRECTS -> "Too many redirects"
+                            DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> "Unhandled HTTP response code"
+                            DownloadManager.ERROR_UNKNOWN -> "Unknown error"
+                            else -> "Error code: $reason"
+                        }
+                        android.util.Log.e("UpdateModule", "Download failed: $reasonText")
+                        updatePromise?.reject("ERROR", "Download failed: $reasonText")
+                    }
+                    else -> {
+                        android.util.Log.e("UpdateModule", "Download status: $status")
+                        updatePromise?.reject("ERROR", "Unexpected download status: $status")
                     }
                 }
+            } else {
+                android.util.Log.e("UpdateModule", "Download query returned no results")
+                updatePromise?.reject("ERROR", "Download not found in download manager")
             }
+            cursor.close()
+        } catch (e: Exception) {
+            android.util.Log.e("UpdateModule", "Error processing download: ${e.message}", e)
+            updatePromise?.reject("ERROR", "Failed to process download: ${e.message}")
+        } finally {
+            updatePromise = null
+            try {
+                reactApplicationContext.unregisterReceiver(downloadReceiver)
+            } catch (e: Exception) {
+                // Already unregistered
+            }
+        }
+    }
+
+    private fun startDownloadPoll() {
+        stopDownloadPoll()
+        val poll = object : Runnable {
+            override fun run() {
+                if (downloadHandled) return
+                val downloadManager = reactApplicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                var status = -1
+                var reason = 0
+                var done = 0L
+                var total = -1L
+                try {
+                    downloadManager.query(DownloadManager.Query().setFilterById(downloadId))?.use { c ->
+                        if (c.moveToFirst()) {
+                            status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                            reason = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+                            done = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                            total = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.w("UpdateModule", "Download status query failed: ${e.message}")
+                }
+
+                if (status == DownloadManager.STATUS_SUCCESSFUL || status == DownloadManager.STATUS_FAILED) {
+                    finishDownload()
+                    return
+                }
+
+                val now = System.currentTimeMillis()
+                if (done != lastBytes) {
+                    lastBytes = done
+                    lastProgressAt = now
+                }
+                val waitReason = pausedReason(status, reason)
+                emitProgress(status, done, total, waitReason)
+
+                if (now - lastProgressAt >= STALL_TIMEOUT_MS) {
+                    android.util.Log.e("UpdateModule", "Download stalled (status=$status, reason=$reason, bytes=$done/$total)")
+                    abandonDownload(
+                        "STALLED",
+                        "The download has not progressed for ${STALL_TIMEOUT_MS / 1000} seconds" +
+                            (waitReason?.let { " ($it)" } ?: "")
+                    )
+                    return
+                }
+                mainHandler.postDelayed(this, POLL_INTERVAL_MS)
+            }
+        }
+        downloadPoll = poll
+        mainHandler.postDelayed(poll, POLL_INTERVAL_MS)
+    }
+
+    private fun stopDownloadPoll() {
+        downloadPoll?.let { mainHandler.removeCallbacks(it) }
+        downloadPoll = null
+    }
+
+    /** Stops the download for good and settles the JS promise with [code]. */
+    private fun abandonDownload(code: String, message: String) {
+        if (downloadHandled) return
+        downloadHandled = true
+        stopDownloadPoll()
+        try {
+            val downloadManager = reactApplicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            downloadManager.remove(downloadId)
+        } catch (_: Exception) {}
+        try { reactApplicationContext.unregisterReceiver(downloadReceiver) } catch (_: Exception) {}
+        updatePromise?.reject(code, message)
+        updatePromise = null
+    }
+
+    @ReactMethod
+    fun cancelDownload(promise: Promise) {
+        abandonDownload("CANCELLED", "Update download cancelled")
+        promise.resolve(true)
+    }
+
+    private fun pausedReason(status: Int, reason: Int): String? {
+        if (status != DownloadManager.STATUS_PAUSED) return null
+        return when (reason) {
+            DownloadManager.PAUSED_WAITING_FOR_NETWORK -> "waiting_for_network"
+            DownloadManager.PAUSED_QUEUED_FOR_WIFI -> "queued_for_wifi"
+            DownloadManager.PAUSED_WAITING_TO_RETRY -> "waiting_to_retry"
+            else -> "paused"
+        }
+    }
+
+    private fun emitProgress(status: Int, done: Long, total: Long, waitReason: String?) {
+        try {
+            val map = Arguments.createMap().apply {
+                putString(
+                    "status",
+                    when (status) {
+                        DownloadManager.STATUS_PENDING -> "pending"
+                        DownloadManager.STATUS_RUNNING -> "running"
+                        DownloadManager.STATUS_PAUSED -> "paused"
+                        else -> "unknown"
+                    }
+                )
+                putDouble("downloaded", done.toDouble())
+                putDouble("total", total.toDouble())
+                if (waitReason != null) putString("reason", waitReason)
+            }
+            reactApplicationContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                .emit("updateDownloadProgress", map)
+        } catch (_: Exception) {
+            // JS not ready: the next tick tries again
         }
     }
 
@@ -566,6 +706,11 @@ class UpdateInstallReceiver : BroadcastReceiver() {
             android.content.pm.PackageInstaller.STATUS_FAILURE_STORAGE -> {
                 val message = intent.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE)
                 android.util.Log.e("UpdateInstallReceiver", "Installation failed: $message (status: $status)")
+                // #274: this used to be the only trace of a failed update; the screen said nothing
+                KioskModule.sendEventFromNative("updateInstallFailed", Arguments.createMap().apply {
+                    putString("message", message ?: "")
+                    putInt("status", status)
+                })
             }
         }
     }

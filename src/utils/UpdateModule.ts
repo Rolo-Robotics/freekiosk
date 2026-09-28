@@ -88,4 +88,15 @@ export default {
     }
     return UpdateModule.downloadAndInstall(downloadUrl, version);
   },
+
+  /**
+   * Stop the update download in progress. The pending downloadAndInstall() promise
+   * rejects with code CANCELLED.
+   */
+  cancelDownload(): Promise<boolean> {
+    if (!ENABLE_SELF_UPDATE) {
+      return Promise.resolve(false);
+    }
+    return UpdateModule.cancelDownload();
+  },
 };

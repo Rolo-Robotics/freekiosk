@@ -256,6 +256,13 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
   const [updateInfo, setUpdateInfo] = useState<any>(null);
   const [downloading, setDownloading] = useState<boolean>(false);
+  // #274: live state of the update download, so the dialog shows progress or what it waits for
+  const [downloadProgress, setDownloadProgress] = useState<{
+    status: string;
+    downloaded: number;
+    total: number;
+    reason?: string;
+  } | null>(null);
   const [currentVersion, setCurrentVersion] = useState<string>('');
   const [betaUpdatesEnabled, setBetaUpdatesEnabled] = useState<boolean>(false);
 
@@ -1220,6 +1227,40 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     }
   };
 
+  // #274: progress from the native download poll, and a silent install that failed after
+  // the download (Device Owner), which used to leave no trace on screen
+  useEffect(() => {
+    const progressSub = DeviceEventEmitter.addListener('updateDownloadProgress', (p) => {
+      setDownloadProgress(p);
+    });
+    const installSub = DeviceEventEmitter.addListener('updateInstallFailed', (e) => {
+      Alert.alert(
+        t('screens.settingsMain.installFailedTitle'),
+        t('screens.settingsMain.installFailedMessage', { message: e?.message || '' }),
+      );
+    });
+    return () => {
+      progressSub.remove();
+      installSub.remove();
+    };
+  }, [t]);
+
+  const downloadStatusText = (): string => {
+    const p = downloadProgress;
+    if (!p) return t('screens.settingsMain.pleaseWaitDownloading');
+    if (p.reason) return t(`screens.settingsMain.downloadWait.${p.reason}`, { defaultValue: t('screens.settingsMain.downloadWait.paused') });
+    if (p.status === 'pending') return t('screens.settingsMain.downloadWait.pending');
+    if (p.total > 0) {
+      const percent = Math.min(100, Math.round((p.downloaded / p.total) * 100));
+      return t('screens.settingsMain.downloadProgress', {
+        percent,
+        done: (p.downloaded / 1048576).toFixed(1),
+        total: (p.total / 1048576).toFixed(1),
+      });
+    }
+    return t('screens.settingsMain.pleaseWaitDownloading');
+  };
+
   const handleDownloadUpdate = async (update?: any) => {
     if (!ENABLE_SELF_UPDATE) return;
     const updateData = update || updateInfo;
@@ -1260,6 +1301,7 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
       console.warn('Install permission check failed:', error);
     }
     
+    setDownloadProgress(null);
     setDownloading(true);
     
     try {
@@ -1273,6 +1315,17 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     } catch (error: any) {
       setDownloading(false);
       const errorMsg = error?.message || error?.toString() || 'Unknown error';
+
+      if (error?.code === 'CANCELLED') {
+        return;
+      }
+      if (error?.code === 'STALLED') {
+        Alert.alert(
+          t('screens.settingsMain.downloadStalledTitle'),
+          t('screens.settingsMain.downloadStalledMessage'),
+        );
+        return;
+      }
 
       // Provide helpful message for install permission errors
       if (error?.code === 'INSTALL_PERMISSION' || errorMsg.includes('unknown sources')) {
@@ -2276,11 +2329,18 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
           <View style={settingsStyles.modalContent}>
             <Text style={settingsStyles.modalTitle}>{t('screens.settingsMain.downloading')}</Text>
             <Text style={settingsStyles.modalText}>
-              {t('screens.settingsMain.pleaseWaitDownloading')}
+              {downloadStatusText()}
             </Text>
             <Text style={settingsStyles.modalHint}>
               {t('screens.settingsMain.doNotCloseApp')}
             </Text>
+            {/* #274: the dialog could not be closed, so a stalled download trapped the screen */}
+            <TouchableOpacity
+              style={settingsStyles.modalCancelButton}
+              onPress={() => { UpdateModule.cancelDownload().catch(() => {}); }}
+            >
+              <Text style={settingsStyles.modalCancelText}>{t('screens.settingsMain.cancel')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
