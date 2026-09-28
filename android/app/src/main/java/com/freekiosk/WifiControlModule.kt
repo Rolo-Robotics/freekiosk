@@ -421,8 +421,17 @@ class WifiControlModule(private val reactContext: ReactApplicationContext) :
             return
         }
 
-        // Fallback for Android 10/11. This creates an app-scoped request, so it
-        // is not suitable as the primary kiosk path on modern device-owner builds.
+        // #273: Android 10/11 have no addNetworkPrivileged, but a Device Owner is still allowed
+        // the deprecated WifiManager configuration calls that Android 10 closed to other apps.
+        // They make the network the device's saved, default Wi-Fi, as on Android 12+ above,
+        // instead of the app-scoped connection below.
+        if (isDeviceOwner()) {
+            connectDeviceOwnerApi29(ssid, password, promise)
+            return
+        }
+
+        // Android 10/11 without Device Owner: an app-scoped request, the only option left.
+        // It does not become the device default network.
         val wifiManager = reactContext.applicationContext
             .getSystemService(Context.WIFI_SERVICE) as WifiManager
         val connectivityManager = reactContext.applicationContext
@@ -559,6 +568,51 @@ class WifiControlModule(private val reactContext: ReactApplicationContext) :
         return true
     }
 
+    /**
+     * #273: Device Owner on Android 10/11. Saves the network as a system configuration and
+     * selects it, then reports success only once Android shows it as the default Wi-Fi.
+     * Android keeps one configuration per network name, so a name that is already saved is
+     * updated in place rather than added a second time.
+     */
+    @Suppress("DEPRECATION")
+    private fun connectDeviceOwnerApi29(ssid: String, password: String, promise: Promise) {
+        val wifiManager = reactContext.applicationContext
+            .getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val connectivityManager = reactContext.applicationContext
+            .getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        releaseActiveNetworkRequest(connectivityManager)
+
+        val config = buildWifiConfiguration(ssid, password)
+        val existing = try {
+            wifiManager.configuredNetworks?.firstOrNull { it.SSID?.trim('"') == ssid }
+        } catch (_: SecurityException) {
+            null
+        }
+        val netId = if (existing != null) {
+            config.networkId = existing.networkId
+            wifiManager.updateNetwork(config)
+        } else {
+            wifiManager.addNetwork(config)
+        }
+        if (netId < 0) {
+            promise.reject(
+                "ADD_NETWORK_FAILED",
+                "Android did not accept the configuration for \"$ssid\"; refusing app-scoped fallback because it would not become the device default network"
+            )
+            return
+        }
+
+        wifiManager.disconnect()
+        if (!wifiManager.enableNetwork(netId, true)) {
+            promise.reject("ENABLE_NETWORK_FAILED", "Android could not enable \"$ssid\" as the selected WiFi network")
+            return
+        }
+        wifiManager.reconnect()
+        android.util.Log.d("WifiControlModule", "Requested default WiFi connection for $ssid (Device Owner, API ${Build.VERSION.SDK_INT}) netId=$netId")
+        waitForDefaultWifi(ssid, promise)
+    }
+
     // Pre-Android 10: Use the (deprecated) WifiConfiguration approach which
     // does not require a system dialog and works silently.
     @Suppress("DEPRECATION")
@@ -629,6 +683,12 @@ class WifiControlModule(private val reactContext: ReactApplicationContext) :
             .getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val startedAt = System.currentTimeMillis()
         val timeoutMs = 30_000L
+        // #273: a network with no internet access (a door controller, a local-only IoT
+        // network) never validates. Once it has been the default Wi-Fi this long without
+        // validating, report the connection as made, with validated=false, instead of a
+        // failure that makes the Wi-Fi dialog discard the saved password.
+        val validationGraceMs = 10_000L
+        var joinedAt = 0L
 
         activeWifiStatusPoll?.let { mainHandler.removeCallbacks(it) }
         activeWifiStatusPoll = object : Runnable {
@@ -641,12 +701,16 @@ class WifiControlModule(private val reactContext: ReactApplicationContext) :
                 val hasInternet = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
                 val isValidated = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
 
-                if (isDefaultWifi && hasInternet && isValidated && currentSsid == ssid) {
+                val joined = isDefaultWifi && currentSsid == ssid
+                if (joined && joinedAt == 0L) joinedAt = System.currentTimeMillis()
+                if (!joined) joinedAt = 0L
+                val validated = hasInternet && isValidated
+                if (joined && (validated || System.currentTimeMillis() - joinedAt >= validationGraceMs)) {
                     activeWifiStatusPoll = null
                     val result = Arguments.createMap()
                     result.putBoolean("success", true)
                     result.putString("ssid", ssid)
-                    result.putBoolean("validated", isValidated)
+                    result.putBoolean("validated", validated)
                     promise.resolve(result)
                     return
                 }
@@ -655,7 +719,7 @@ class WifiControlModule(private val reactContext: ReactApplicationContext) :
                     activeWifiStatusPoll = null
                     promise.reject(
                         "CONNECT_TIMEOUT",
-                        "Android joined \"$currentSsid\" but did not validate \"$ssid\" as the default WiFi internet network"
+                        "Android did not make \"$ssid\" the default WiFi network (current WiFi: \"$currentSsid\")"
                     )
                     return
                 }
