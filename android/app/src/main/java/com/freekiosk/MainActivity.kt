@@ -615,6 +615,12 @@ class MainActivity : ReactActivity() {
         tryStartLockTask("fallback screen pinning")
       }
     } else {
+      // #275: screen pinning only keeps the pinned task in front, so pinning FreeKiosk
+      // would push the external app back behind it. No whitelist without Device Owner.
+      if (isExternalAppMode) {
+        DebugLog.d("MainActivity", "External app mode without Device Owner - screen pinning skipped (#275)")
+        return
+      }
       // Mode non-Device Owner: Screen Pinning manuel (demande confirmation utilisateur)
       tryStartLockTask("Screen Pinning mode - user confirmation required")
     }

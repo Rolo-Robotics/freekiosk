@@ -724,6 +724,10 @@ class KioskModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                             } catch (e: Exception) {
                                 android.util.Log.w("KioskModule", "Could not unmute audio streams: ${e.message}")
                             }
+                        } else if (!externalAppPackage.isNullOrEmpty()) {
+                            // #275: without Device Owner there is no whitelist, and pinning
+                            // FreeKiosk's task keeps the external app from coming to the front.
+                            android.util.Log.d("KioskModule", "External app without Device Owner - screen pinning skipped")
                         } else {
                             activity.startLockTask()
                             android.util.Log.d("KioskModule", "Screen pinning started")
