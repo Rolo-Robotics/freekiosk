@@ -241,6 +241,27 @@ Every key below is a straight passthrough: the value you pass is stored as-is.
 | `--ez url_planner_enabled true` | Schedule URLs by day and time |
 | `--es url_planner_events '[...]'` | Planner events, as a JSON array |
 
+**URL Planner events**
+
+`url_planner_events` takes a JSON array. The planner only runs in Website mode with `url_planner_enabled true`; outside an event the tablet shows the normal URL. Requires 2.0.0-beta.2 or later: earlier builds ignore both keys without a warning.
+
+```bash
+adb shell am start -n com.freekiosk/.MainActivity   --es pin "YOUR_PIN"   --ez url_planner_enabled true   --es url_planner_events '[{"id":"advert-1","type":"oneTime","name":"Autumn advert","url":"https://example.com/advert.html","enabled":true,"priority":1,"startDate":"2026-10-12","endDate":"2026-10-25","allDay":true}]'
+```
+
+| Field | Description |
+|-------|-------------|
+| `id` | Unique string per event |
+| `type` | `oneTime` (dated) or `recurring` (weekly) |
+| `name`, `url`, `enabled` | Label, URL to show, on/off |
+| `priority` | 1 is highest, used when events overlap; a `oneTime` event wins over a `recurring` one of equal priority |
+| `startDate`, `endDate` | `oneTime` only, `YYYY-MM-DD`, local time. The end date is included |
+| `allDay` | `oneTime` only. `true`, or give `startTime` and `endTime` instead |
+| `days` | `recurring` only, `0` (Sunday) to `6` (Saturday) |
+| `startTime`, `endTime` | `HH:MM`, 24 h, local time. An end before the start runs overnight |
+
+> **Windows PowerShell:** it strips the double quotes inside the JSON, and FreeKiosk then receives `[{id:advert-1,...}]`, which is not valid. Put the command in a `.sh` file, `adb push` it to `/data/local/tmp` and run it with `adb shell sh /data/local/tmp/file.sh`, or use `cmd.exe`/Git Bash.
+
 **URL filtering**
 
 | Parameter | Description |

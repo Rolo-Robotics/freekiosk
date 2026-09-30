@@ -80,7 +80,8 @@ export const isEventActive = (event: ScheduledEvent): boolean => {
   const now = new Date();
   const currentDay = now.getDay();
   const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-  const currentDate = now.toISOString().split('T')[0];
+  // Local calendar date: toISOString() is UTC, which shifts the day around midnight.
+  const currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
   if (event.type === 'recurring') {
     if (event.startTime && event.endTime) {
