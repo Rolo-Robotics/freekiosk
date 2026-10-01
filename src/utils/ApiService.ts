@@ -431,6 +431,11 @@ class ApiServiceClass {
 
       case 'executeJs':
         if (!p.code) return fail('Missing JS code');
+        // REST, MQTT and the cloud all land here. With the payment bridge on, JS injected into
+        // the page could drive the terminal as if it were the page, so remote JS is refused.
+        if (await StorageService.getPaymentsEnabled()) {
+          return fail('Remote JavaScript is disabled while the payment terminal bridge is enabled');
+        }
         if (!cb.onExecuteJs) return fail('Handler unavailable');
         cb.onExecuteJs(p.code);
         return ok();

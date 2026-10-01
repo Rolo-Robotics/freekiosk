@@ -37,6 +37,20 @@ class BlockingOverlayManager(private val context: Context) {
     private var regions = listOf<BlockingRegion>()
     private var isEnabled = false
     private var currentForegroundPackage: String? = null
+
+    /**
+     * Set while a payment SDK draws its own screen (Tap to Pay), which refuses PIN entry
+     * while any overlay window is up. Regions come back as they were when it clears.
+     */
+    @Volatile
+    private var suspendedForPayment = false
+
+    fun setSuspendedForPayment(suspended: Boolean) {
+        if (suspendedForPayment == suspended) return
+        DebugLog.d(TAG, "setSuspendedForPayment: $suspended")
+        suspendedForPayment = suspended
+        if (suspended) removeAllOverlays() else updateOverlays()
+    }
     
     /**
      * Enable or disable blocking overlays globally
@@ -92,7 +106,7 @@ class BlockingOverlayManager(private val context: Context) {
         
         removeAllOverlays()
         
-        if (!isEnabled) return
+        if (!isEnabled || suspendedForPayment) return
         
         val screenSize = getScreenSize()
         DebugLog.d(TAG, "Screen size: ${screenSize.x}x${screenSize.y}")

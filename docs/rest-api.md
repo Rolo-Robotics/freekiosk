@@ -648,6 +648,7 @@ Execute JavaScript in WebView.
 ```json
 { "code": "alert('Hello!')" }
 ```
+Answers `403` while the [payment terminal bridge](payments.md) is enabled: injected JS could otherwise drive the payment terminal as if it were the page. MQTT and cloud `execute_js` are refused likewise.
 
 #### `GET|POST /api/clearCache`
 Clear WebView cache, cookies, localStorage and reload. Performs a full native cache clear including:

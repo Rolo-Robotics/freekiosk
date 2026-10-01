@@ -871,6 +871,9 @@ class MainActivity : ReactActivity() {
       // with the printer selection dialog
       if (PrintModule.isPrintActive) {
         DebugLog.d("MainActivity", "Skipping lock task re-entry: print dialog is active")
+      } else if (com.freekiosk.payment.PaymentTerminalManager.isTransactionActive) {
+        // The payment SDK's own screen (Tap to Pay) resumes us on the way in and out.
+        DebugLog.d("MainActivity", "Skipping lock task re-entry: payment in progress")
       } else if (!isTaskLocked()) {
         // Check if power button (GlobalActions) is allowed — if so, the brief focus
         // loss may be from the power menu. Delay the re-lock to avoid dismissing it.
@@ -1022,8 +1025,8 @@ class MainActivity : ReactActivity() {
       // clearing the flag here is what used to let the next focus loss re-enter lock
       // task over an open printer selection. PrintModule now reads the job's own state,
       // so this only defers immersive mode and leaves the flag alone.
-      if (PrintModule.isPrintActive) {
-        DebugLog.d("MainActivity", "Focus regained with a print job live, deferring immersive mode")
+      if (PrintModule.isPrintActive || com.freekiosk.payment.PaymentTerminalManager.isTransactionActive) {
+        DebugLog.d("MainActivity", "Focus regained with a print job or payment live, deferring immersive mode")
         // Use a longer delay to let the print system activity fully dismiss
         hideSystemUIHandler.removeCallbacksAndMessages(null)
         hideSystemUIHandler.postDelayed({ hideSystemUI() }, 1500L)

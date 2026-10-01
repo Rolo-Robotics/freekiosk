@@ -75,6 +75,13 @@ object ScreenCapture {
         maxWidth: Int = 0,
     ): ByteArray? = synchronized(screenshotLock) {
         lastError = null
+
+        // Every remote capture (REST, MQTT, cloud) lands here. During a payment the screen
+        // may show a PIN pad, and the payment SDKs abort PIN entry when anyone captures it.
+        if (com.freekiosk.payment.PaymentTerminalManager.isTransactionActive) {
+            lastError = "Screenshots are disabled while a payment is in progress"
+            return null
+        }
         val foreground = reactContext.lifecycleState == LifecycleState.RESUMED
 
         if (foreground) {

@@ -182,6 +182,9 @@
       "silentEnable": "Activer l'impression silencieuse",
       "silentEnableHint": "Permet aux pages web d'imprimer sur une imprimante USB ESC/POS sans boîte de dialogue, via window.FreeKiosk.silentPrinter"
     },
+    "payments": {
+      "title": "Terminal de paiement"
+    },
     "webNav": {
       "title": "Bouton de navigation web",
       "enable": "Activer le bouton retour",
@@ -1257,6 +1260,21 @@
       "noOriginsHint": "Aucune page ne peut imprimer tant que vous n'en ajoutez pas une",
       "printTestPage": "Imprimer une page de test",
       "info": "Les pages web impriment sans dialogue en appelant window.FreeKiosk.silentPrinter.print() ou printImage(). print() met la page en forme pour qu'un pixel CSS corresponde à un point.\n\nwindow.print() n'est pas concerné : il ouvre la boîte de dialogue d'impression Android quand l'impression de la page est activée, et ne fait rien sinon.\n\nPour un accès qui survit aux redémarrages : branchez l'imprimante, choisissez FreeKiosk et cochez l'option qui l'ouvre toujours pour cet appareil. Le bouton ci-dessus n'accorde l'accès que jusqu'au débranchement de l'imprimante, et le mode kiosque verrouillé masque complètement cette boîte de dialogue.\n\nLes imprimantes qui exposent une interface USB propre au fabricant au lieu de la classe imprimante standard impriment quand même, mais ne peuvent pas indiquer le niveau de papier."
+    },
+    "payments": {
+      "enable": "Activer le pont de terminal de paiement",
+      "enableHint": "Permettre aux pages web autorisées d'encaisser des paiements par carte via window.FreeKiosk.payments (Stripe Terminal)",
+      "notInBuild": "Cette version de FreeKiosk n'inclut pas de SDK de paiement. Installez une version compilée avec -Ppayments pour encaisser des paiements.",
+      "origins": "Origines autorisées",
+      "originsHint": "Seules ces origines https peuvent utiliser le terminal de paiement. Les autres entrées sont ignorées.",
+      "noOrigins": "Aucune page ne peut encore encaisser de paiement",
+      "noOriginsHint": "Ajoutez l'origine https de votre application web de paiement, par ex. https://pos.example.com",
+      "readersReady": "Lecteurs externes : {{state}}",
+      "tapToPayReady": "Tap to Pay sur cet appareil : {{state}}",
+      "ready": "prêt",
+      "notReady": "pas prêt",
+      "recheck": "Vérifier à nouveau",
+      "securityInfo": "Tant que cette option est active, le JavaScript à distance (REST, MQTT, cloud) est refusé, et les captures d'écran à distance, le watchdog, la rotation d'URL et les mises à jour attendent la fin d'un paiement en cours.\n\nCes réglages ne sont pas inclus dans les sauvegardes ni dans la configuration cloud.\n\nLes jetons de connexion viennent de votre propre backend, via la page. FreeKiosk ne stocke jamais la clé secrète d'un prestataire de paiement."
     }
   },
   "screens": {

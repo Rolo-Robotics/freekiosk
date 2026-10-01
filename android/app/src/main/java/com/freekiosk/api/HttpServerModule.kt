@@ -309,6 +309,11 @@ class HttpServerModule(private val reactContext: ReactApplicationContext) :
                         maxWidth = streamManager.defaultWidth,
                         rotate = streamManager.defaultRotate
                     )
+                },
+                remoteJsBlockedReason = {
+                    if (com.freekiosk.payment.PaymentSettings.isBridgeEnabled(reactApplicationContext))
+                        com.freekiosk.payment.PaymentSettings.REMOTE_JS_BLOCKED
+                    else null
                 }
             )
 

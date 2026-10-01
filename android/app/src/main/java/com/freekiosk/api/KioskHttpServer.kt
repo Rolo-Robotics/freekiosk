@@ -22,7 +22,9 @@ class KioskHttpServer(
     private val screenshotErrorProvider: (() -> String?)? = null,
     private val cameraPhotoProvider: ((camera: String, quality: Int, rotation: Int) -> java.io.InputStream?)? = null,
     private val cameraStreamProvider: ((params: CameraStreamManager.StreamParams) -> CameraStreamManager.StreamResult)? = null,
-    private val cameraStreamDefaults: (() -> CameraStreamManager.StreamParams)? = null
+    private val cameraStreamDefaults: (() -> CameraStreamManager.StreamParams)? = null,
+    /** Non-null: why /api/js is refused right now (the payment terminal bridge is on). */
+    private val remoteJsBlockedReason: (() -> String?)? = null
 ) : NanoHTTPD(port) {
 
     companion object {
@@ -501,6 +503,8 @@ class KioskHttpServer(
 
     private fun handleExecuteJs(session: IHTTPSession): Response {
         checkControlAllowed()?.let { return it }
+        // JS refuses it too, but the command is fire-and-forget: answer the caller honestly here.
+        remoteJsBlockedReason?.invoke()?.let { return jsonError(Response.Status.FORBIDDEN, it) }
         
         val body = parseBody(session)
         val code = body?.optString("code", "") ?: ""

@@ -182,6 +182,9 @@
       "silentEnable": "Enable Silent Printing",
       "silentEnableHint": "Let web pages print to a USB ESC/POS printer with no dialog, via window.FreeKiosk.silentPrinter"
     },
+    "payments": {
+      "title": "Payment Terminal"
+    },
     "webNav": {
       "title": "Web Navigation Button",
       "enable": "Enable Back Button",
@@ -1257,6 +1260,21 @@
       "noOriginsHint": "No page can print until you add one",
       "printTestPage": "Print test page",
       "info": "Web pages print silently by calling window.FreeKiosk.silentPrinter.print() or printImage(). print() lays the page out so one CSS pixel is one dot.\n\nwindow.print() is not affected: it opens the Android print dialog when Window Printing is enabled, and does nothing otherwise.\n\nFor access that survives reboots: plug the printer in, then choose FreeKiosk and tick \"Always open\". The button above only grants access until the printer is unplugged, and lock task mode suppresses that dialog entirely.\n\nPrinters exposing a vendor-specific USB interface instead of the standard printer class still print, but cannot report paper level."
+    },
+    "payments": {
+      "enable": "Enable Payment Terminal Bridge",
+      "enableHint": "Let allowed web pages take card payments through window.FreeKiosk.payments (Stripe Terminal)",
+      "notInBuild": "This FreeKiosk build does not include a payment SDK. Install a build made with -Ppayments to take payments.",
+      "origins": "Allowed origins",
+      "originsHint": "Only these https origins may use the payment terminal. Other entries are ignored.",
+      "noOrigins": "No page can take payments yet",
+      "noOriginsHint": "Add the https origin of your payment web app, e.g. https://pos.example.com",
+      "readersReady": "External readers: {{state}}",
+      "tapToPayReady": "Tap to Pay on this device: {{state}}",
+      "ready": "ready",
+      "notReady": "not ready",
+      "recheck": "Check again",
+      "securityInfo": "While this is on, remote JavaScript (REST, MQTT, cloud) is refused, and remote screenshots, the watchdog, URL rotation and updates wait for a payment in progress to end.\n\nThese settings are not included in backups or cloud configuration.\n\nConnection tokens come from your own backend through the page. FreeKiosk never stores a payment provider's secret key."
     }
   },
   "screens": {

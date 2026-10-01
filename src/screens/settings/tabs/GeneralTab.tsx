@@ -18,6 +18,7 @@ import {
   ManagedAppsSection,
   SettingsRadioGroup,
   EscPosPrinterSection,
+  PaymentTerminalSection,
 } from '../../../components/settings';
 import { ManagedApp } from '../../../types/managedApps';
 import Icon from '../../../components/Icon';
@@ -103,6 +104,12 @@ interface GeneralTabProps {
   onEscPosFeedLinesChange: (value: number) => void;
   printOrigins: string[] | null;
   onPrintOriginsChange: (value: string[] | null) => void;
+
+  // Payment terminal bridge (webview only)
+  paymentsEnabled: boolean;
+  onPaymentsEnabledChange: (value: boolean) => void;
+  paymentOrigins: string[];
+  onPaymentOriginsChange: (value: string[]) => void;
   
   // URL Rotation (webview only)
   urlRotationEnabled: boolean;
@@ -233,6 +240,10 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onEscPosFeedLinesChange,
   printOrigins,
   onPrintOriginsChange,
+  paymentsEnabled,
+  onPaymentsEnabledChange,
+  paymentOrigins,
+  onPaymentOriginsChange,
   urlRotationEnabled,
   onUrlRotationEnabledChange,
   urlRotationList,
@@ -1050,6 +1061,18 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
               />
             )}
           </View>
+        </SettingsSection>
+      )}
+
+      {/* Payment terminal bridge - WebView only */}
+      {displayMode === 'webview' && (
+        <SettingsSection title={t('general.payments.title')} icon="credit-card">
+          <PaymentTerminalSection
+            enabled={paymentsEnabled}
+            onEnabledChange={onPaymentsEnabledChange}
+            origins={paymentOrigins}
+            onOriginsChange={onPaymentOriginsChange}
+          />
         </SettingsSection>
       )}
 

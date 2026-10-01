@@ -190,6 +190,7 @@ export type IconName =
   | 'rename-box'
   | 'tag'
   | 'printer'
+  | 'credit-card'
   // Connectivity & hardware (emoji replacements)
   | 'wifi'
   | 'wifi-strength-1'

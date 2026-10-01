@@ -14,6 +14,7 @@ export { default as UrlListEditor } from './UrlListEditor';
 export { default as BackupRestoreSection } from './BackupRestoreSection';
 export { default as ManagedAppsSection } from './ManagedAppsSection';
 export { default as EscPosPrinterSection } from './EscPosPrinterSection';
+export { default as PaymentTerminalSection } from './PaymentTerminalSection';
 
 // URL Planner components
 export { default as DaySelector } from './DaySelector';

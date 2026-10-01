@@ -90,6 +90,7 @@ const nativeModuleStub = () =>
   'MqttModule',
   'OverlayPermissionModule',
   'OverlayServiceModule',
+  'PaymentTerminalModule',
   'PrintModule',
   'ProximityDetectionModule',
   'RotationControlModule',

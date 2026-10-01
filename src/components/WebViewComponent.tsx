@@ -24,6 +24,8 @@ import type { WebViewErrorEvent, ShouldStartLoadRequest, WebViewRenderProcessGon
 import { useNavigation } from '@react-navigation/native';
 import PrintModule from '../utils/PrintModule';
 import SilentPrintModule from '../utils/SilentPrintModule';
+import PaymentTerminal, { onPaymentTerminalEvent, WEBVIEW_OWNER } from '../utils/PaymentTerminalModule';
+import { PAYMENT_PAGE_OPS, type PaymentPageOp } from '../types/payments';
 import { CLOUD_ENABLED } from '../config/features';
 import { CloudSyncService, PROVISIONING_STATUS_EVENT } from '../utils/CloudSyncService';
 import type { ProvisioningStatus } from '../utils/CloudSyncService';
@@ -54,6 +56,8 @@ interface WebViewComponentProps {
   escPosCut?: boolean;
   escPosFeedLines?: number;
   printOrigins?: string[] | null; // Origins allowed to use Silent Print; null = any, [] = none
+  paymentsEnabled?: boolean; // Inject window.FreeKiosk.payments, the payment terminal bridge
+  paymentOrigins?: string[]; // https origins allowed to use it; [] = none (fails closed)
   zoomLevel?: number; // Zoom level percentage (50-200, default 100)
   zoomMode?: string; // 'standard' (CSS zoom) | 'fit' (viewport reflow, #188)
   disableUserZoom?: boolean; // Prevent pinch-to-zoom and double-tap zoom
@@ -77,8 +81,80 @@ export interface WebViewComponentRef {
 // OEM WebView). Ends with `true;` to silence react-native-webview's injection warning.
 const MEDIA_PAUSE_JS = `(function(){try{document.querySelectorAll('audio,video').forEach(function(m){try{m.pause();}catch(e){}});}catch(e){}})();true;`;
 
+// window.FreeKiosk.payments, spliced into the bridge closure (it uses that closure's call()).
+// Cancellable operations get an opId: the returned promise carries it as .opId for cancel().
+// Connection tokens are pulled from the page's own backend through setTokenProvider(), so
+// FreeKiosk never holds the secret key that mints them. See docs/payments.md.
+const PAYMENTS_PAGE_API = `
+      (function() {
+        var listeners = {};
+        var tokenProvider = null;
+        var nextOp = 1;
+
+        function pay(op, data) { return call('FK_PAYMENT', op, data); }
+
+        function withOp(op, data) {
+          var opId = (data && data.opId) || ('op' + (nextOp++) + '-' + Date.now().toString(36));
+          data.opId = opId;
+          var promise = pay(op, data);
+          promise.opId = opId;
+          return promise;
+        }
+
+        function answerTokenRequest(request) {
+          var requestId = request && request.requestId;
+          if (!tokenProvider) {
+            pay('failTokenRequest', { requestId: requestId, message: 'No token provider set' });
+            return;
+          }
+          Promise.resolve()
+            .then(function() { return tokenProvider(request); })
+            .then(function(token) {
+              if (typeof token !== 'string' || !token) throw new Error('Token provider returned no token');
+              return pay('provideToken', { requestId: requestId, token: token });
+            })
+            .catch(function(err) {
+              pay('failTokenRequest', { requestId: requestId, message: String((err && err.message) || err) });
+            });
+        }
+
+        // Pushed from native through injectJavaScript, main frame only.
+        window.__fkPaymentEvent = function(json) {
+          var event;
+          try { event = JSON.parse(json); } catch (e) { return; }
+          if (event.type === 'tokenRequest') answerTokenRequest(event.payload);
+          var targets = (listeners[event.type] || []).concat(listeners['*'] || []);
+          targets.forEach(function(cb) { try { cb(event.payload, event.type); } catch (e) {} });
+        };
+
+        window.FreeKiosk.payments = {
+          getInfo: function() { return pay('getInfo'); },
+          getReadiness: function(provider) { return pay('getReadiness', { provider: provider || null }); },
+          setTokenProvider: function(fn) { tokenProvider = typeof fn === 'function' ? fn : null; },
+          initialize: function(provider, config) { return pay('initialize', { provider: provider, config: config || {} }); },
+          discoverReaders: function(options) { return withOp('discoverReaders', { options: options || {} }); },
+          connectReader: function(readerId, options) { return pay('connectReader', { readerId: readerId, options: options || {} }); },
+          disconnectReader: function() { return pay('disconnectReader'); },
+          collectPayment: function(request) { return withOp('collectPayment', { request: request || {} }); },
+          cancel: function(opId) { return pay('cancel', { opId: opId }); },
+          setReaderDisplay: function(cart) { return pay('setReaderDisplay', { cart: cart || {} }); },
+          clearReaderDisplay: function() { return pay('clearReaderDisplay'); },
+          installReaderUpdate: function() { return pay('installReaderUpdate'); },
+          getStatus: function() { return pay('getStatus'); },
+          invoke: function(method, args) { return withOp('invoke', { method: method, args: args || {} }); },
+          on: function(type, cb) {
+            (listeners[type] = listeners[type] || []).push(cb);
+            return function() {
+              listeners[type] = (listeners[type] || []).filter(function(x) { return x !== cb; });
+            };
+          },
+          close: function() { return pay('close'); }
+        };
+      })();
+`;
+
 // Only has to be unguessable to the page, which cannot observe this generator.
-const makePrinterNonce = (): string =>
+const makeBridgeNonce = (): string =>
   Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
 const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(({ 
@@ -102,6 +178,8 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   escPosCut = false,
   escPosFeedLines = 0,
   printOrigins = null,
+  paymentsEnabled = false,
+  paymentOrigins = [],
   zoomLevel = 100,
   zoomMode = 'standard',
   disableUserZoom = false,
@@ -145,8 +223,16 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   const lastTopFrameUrlRef = useRef<string | null>(null);
   // Every frame can postMessage, and all of them arrive under the main frame's URL. Only the main
   // frame is injected, so only it knows this nonce. Checks read the ref, so rotation bites at once.
-  const [printerNonce, setPrinterNonce] = useState<string>(makePrinterNonce);
-  const printerNonceRef = useRef<string>(printerNonce);
+  const [bridgeNonce, setBridgeNonce] = useState<string>(makeBridgeNonce);
+  const bridgeNonceRef = useRef<string>(bridgeNonce);
+  // window.FreeKiosk (silentPrinter, payments) is injected when either feature is on.
+  const bridgeEnabled = silentPrintEnabled || paymentsEnabled;
+  // The payment session this page holds, opened on its first call and closed when it navigates.
+  const paymentSessionRef = useRef<string | null>(null);
+  // Concurrent first calls share one open, or the second would replace (and cancel) the first.
+  const paymentSessionOpeningRef = useRef<Promise<string> | null>(null);
+  // Bumped on every release, so an open that lands after the page moved on is not adopted.
+  const paymentPageGenerationRef = useRef<number>(0);
 
   // Pre-compile URL filter patterns into RegExp for performance
   const compiledFilterPatterns = useMemo(() => {
@@ -338,11 +424,11 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   // A document that loads before the rotated prop commits comes up holding the previous nonce.
   // Hand it the current one; injectJavaScript is main-frame only, so no iframe learns it.
   React.useEffect(() => {
-    if (!silentPrintEnabled || !pageLoaded) return;
+    if (!bridgeEnabled || !pageLoaded) return;
     webViewRef.current?.injectJavaScript(
-      `window.__fkSetPrinterNonce && window.__fkSetPrinterNonce(${JSON.stringify(printerNonce)}); true;`
+      `window.__fkSetBridgeNonce && window.__fkSetBridgeNonce(${JSON.stringify(bridgeNonce)}); true;`
     );
-  }, [silentPrintEnabled, pageLoaded, printerNonce]);
+  }, [bridgeEnabled, pageLoaded, bridgeNonce]);
 
   // Cleanup loading timeout on unmount
   React.useEffect(() => {
@@ -430,28 +516,28 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     };
     ` : '// Printing disabled - window.print() not intercepted'}
 
-    // Silent Print: window.FreeKiosk.silentPrinter drives the ESC/POS printer with no dialog.
+    // window.FreeKiosk: request/response bridge shared by Silent Print and the payment terminal.
     // window.print() is left to the block above.
-    ${silentPrintEnabled ? `
+    ${bridgeEnabled ? `
     (function() {
       var pending = {};
       var nextId = 1;
       // Closure scope: an iframe gets postMessage but never this script, so it cannot stamp this.
-      var nonce = ${JSON.stringify(printerNonce)};
+      var nonce = ${JSON.stringify(bridgeNonce)};
 
-      function call(op, data) {
+      function call(type, op, data) {
         return new Promise(function(resolve, reject) {
           var id = String(nextId++);
           pending[id] = { resolve: resolve, reject: reject };
           window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'FK_PRINTER', nonce: nonce, origin: window.location.origin,
+            type: type, nonce: nonce, origin: window.location.origin,
             op: op, id: id, data: data || {}
           }));
         });
       }
 
       // Re-armed after each load through injectJavaScript, which no iframe can reach.
-      window.__fkSetPrinterNonce = function(value) { nonce = value; };
+      window.__fkSetBridgeNonce = function(value) { nonce = value; };
 
       window.__fkSettle = function(json) {
         var result;
@@ -462,7 +548,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
         if (result.ok) {
           entry.resolve(result.value);
         } else {
-          var error = new Error(result.message || 'Printing failed');
+          var error = new Error(result.message || 'Request failed');
           error.code = result.code || 'ERROR';
           entry.reject(error);
         }
@@ -470,13 +556,19 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
 
       window.FreeKiosk = window.FreeKiosk || {};
       window.FreeKiosk.version = 1;
+
+      ${silentPrintEnabled ? `
+      // Silent Print: drives the ESC/POS printer with no dialog.
       window.FreeKiosk.silentPrinter = {
-        getStatus: function() { return call('getStatus'); },
+        getStatus: function() { return call('FK_PRINTER', 'getStatus'); },
         print: function(jobName) {
-          return call('print', { jobName: jobName || document.title || '' });
+          return call('FK_PRINTER', 'print', { jobName: jobName || document.title || '' });
         },
-        printImage: function(base64) { return call('printImage', { base64: base64 }); }
+        printImage: function(base64) { return call('FK_PRINTER', 'printImage', { base64: base64 }); }
       };
+      ` : ''}
+
+      ${paymentsEnabled ? PAYMENTS_PAGE_API : ''}
 
       // Injection happens after load, so a page that booted first has to be told.
       window.dispatchEvent(new Event('freekiosk:ready'));
@@ -810,7 +902,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   const combinedInjectedJavaScript = injectedJavaScript + getKeyboardModeScript();
 
   // Gestion des messages venant de la webview
-  const settlePrinterRequest = (payload: Record<string, unknown>) => {
+  const settleBridgeRequest = (payload: Record<string, unknown>) => {
     // Double-stringify so the JSON survives being embedded in a JS string literal.
     const safeArg = JSON.stringify(JSON.stringify(payload));
     webViewRef.current?.injectJavaScript(`window.__fkSettle && window.__fkSettle(${safeArg}); true;`);
@@ -827,12 +919,12 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
   };
 
   /** Only the main-frame bridge holds the nonce, and an iframe has no way to learn it. */
-  const isFromPageBridge = (data: any): boolean => data.nonce === printerNonceRef.current;
+  const isFromPageBridge = (data: any): boolean => data.nonce === bridgeNonceRef.current;
 
-  const rotatePrinterNonce = () => {
-    const nonce = makePrinterNonce();
-    printerNonceRef.current = nonce;
-    setPrinterNonce(nonce);
+  const rotateBridgeNonce = () => {
+    const nonce = makeBridgeNonce();
+    bridgeNonceRef.current = nonce;
+    setBridgeNonce(nonce);
   };
 
   const handlePrinterRequest = (data: any, pageUrl?: string) => {
@@ -847,7 +939,7 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
 
     const id = data.id;
     const fail = (code: string, message: string) =>
-      settlePrinterRequest({ id, ok: false, code, message });
+      settleBridgeRequest({ id, ok: false, code, message });
 
     // data.origin is where the bridge posted from; pageUrl is where the main frame had got to by
     // the time the message landed, which a navigation right after the post can have moved on.
@@ -880,9 +972,153 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
     }
 
     work
-      .then((value) => settlePrinterRequest({ id, ok: true, value }))
+      .then((value) => settleBridgeRequest({ id, ok: true, value }))
       .catch((err: any) => fail(err?.code ?? 'ERROR', err?.message ?? 'Printing failed'));
   };
+
+  /**
+   * Payment calls fail closed: the page must be on an https origin that is on the list, and
+   * an empty list lets no page in. The printer's `null = any origin` does not carry over.
+   */
+  const paymentOriginAllowed = (address?: string): boolean => {
+    const origin = originOf(address);
+    return (
+      origin !== null &&
+      origin.startsWith('https://') &&
+      paymentOrigins.some((entry) => originOf(entry) === origin)
+    );
+  };
+
+  const ensurePaymentSession = (): Promise<string> => {
+    if (paymentSessionRef.current) return Promise.resolve(paymentSessionRef.current);
+    if (paymentSessionOpeningRef.current) return paymentSessionOpeningRef.current;
+
+    const generation = paymentPageGenerationRef.current;
+    const opening = PaymentTerminal.openSession(WEBVIEW_OWNER).then((sessionId) => {
+      if (generation !== paymentPageGenerationRef.current) {
+        // The page that asked is gone. Its successor must not inherit this session.
+        PaymentTerminal.closeSession(sessionId).catch(() => {});
+        throw Object.assign(new Error('The page navigated away'), { code: 'NO_SESSION' });
+      }
+      paymentSessionRef.current = sessionId;
+      return sessionId;
+    });
+    paymentSessionOpeningRef.current = opening;
+    const clear = () => {
+      if (paymentSessionOpeningRef.current === opening) paymentSessionOpeningRef.current = null;
+    };
+    opening.then(clear, clear);
+    return opening;
+  };
+
+  /** Drop this page's session: it navigated away, reloaded or the WebView is going. */
+  const releasePaymentSession = (reason: string) => {
+    paymentPageGenerationRef.current += 1;
+    paymentSessionOpeningRef.current = null;
+    if (!paymentSessionRef.current) return;
+    paymentSessionRef.current = null;
+    // Cancels whatever the page had running: a payment the new page knows nothing about
+    // must not stay on the reader.
+    PaymentTerminal.closeSessionsOwnedBy(WEBVIEW_OWNER, reason).catch(() => {});
+  };
+
+  const runPaymentOp = async (op: PaymentPageOp, payload: any): Promise<unknown> => {
+    switch (op) {
+      case 'getInfo':
+        return PaymentTerminal.getInfo();
+      case 'getReadiness':
+        return PaymentTerminal.getReadiness(payload.provider ?? null);
+      case 'close': {
+        const sessionId = paymentSessionRef.current;
+        paymentSessionRef.current = null;
+        if (sessionId) await PaymentTerminal.closeSession(sessionId);
+        return null;
+      }
+    }
+
+    const sessionId = await ensurePaymentSession();
+    switch (op) {
+      case 'initialize':
+        if (typeof payload.provider !== 'string' || !payload.provider) {
+          throw Object.assign(new Error('provider is required'), { code: 'INVALID_ARGUMENT' });
+        }
+        return PaymentTerminal.initialize(sessionId, payload.provider, payload.config ?? {});
+      case 'discoverReaders':
+        return PaymentTerminal.discoverReaders(sessionId, String(payload.opId), payload.options ?? {});
+      case 'connectReader':
+        return PaymentTerminal.connectReader(sessionId, String(payload.readerId ?? ''), payload.options ?? {});
+      case 'disconnectReader':
+        return PaymentTerminal.disconnectReader(sessionId);
+      case 'collectPayment':
+        return PaymentTerminal.collectPayment(sessionId, String(payload.opId), payload.request ?? {});
+      case 'cancel':
+        return PaymentTerminal.cancel(sessionId, String(payload.opId ?? ''));
+      case 'setReaderDisplay':
+        return PaymentTerminal.setReaderDisplay(sessionId, payload.cart ?? {});
+      case 'clearReaderDisplay':
+        return PaymentTerminal.clearReaderDisplay(sessionId);
+      case 'installReaderUpdate':
+        return PaymentTerminal.installReaderUpdate(sessionId);
+      case 'getStatus':
+        return PaymentTerminal.getStatus(sessionId);
+      case 'invoke':
+        return PaymentTerminal.invoke(sessionId, String(payload.opId), String(payload.method ?? ''), payload.args ?? {});
+      case 'provideToken':
+        return PaymentTerminal.provideToken(sessionId, String(payload.requestId ?? ''), String(payload.token ?? ''));
+      case 'failTokenRequest':
+        return PaymentTerminal.failTokenRequest(sessionId, String(payload.requestId ?? ''), String(payload.message ?? ''));
+    }
+    return null;
+  };
+
+  const handlePaymentRequest = (data: any, pageUrl?: string) => {
+    // The API is only injected when payments are on, but any page can post this message itself.
+    if (!paymentsEnabled) return;
+
+    // Dropped in silence, as for the printer: an answer would settle whatever holds that id.
+    if (!isFromPageBridge(data)) {
+      console.warn('[FreeKiosk] Payment request dropped: not from the page bridge');
+      return;
+    }
+
+    const id = data.id;
+    const fail = (code: string, message: string) =>
+      settleBridgeRequest({ id, ok: false, code, message });
+
+    if (!paymentOriginAllowed(data.origin) || !paymentOriginAllowed(pageUrl)) {
+      // Logs the origin only: never the payload, which can hold a client secret or token.
+      console.warn('[FreeKiosk] Payment request blocked for origin:', originOf(data.origin), originOf(pageUrl));
+      fail('ORIGIN_NOT_ALLOWED', 'This page is not allowed to use the payment terminal');
+      return;
+    }
+
+    const op = data.op as PaymentPageOp;
+    if (!(PAYMENT_PAGE_OPS as readonly string[]).includes(op)) {
+      fail('UNKNOWN_OP', `Unknown payment operation: ${String(data.op)}`);
+      return;
+    }
+
+    runPaymentOp(op, data.data || {})
+      .then((value) => settleBridgeRequest({ id, ok: true, value: value ?? null }))
+      .catch((err: any) => fail(err?.code ?? 'ERROR', err?.message ?? 'Payment request failed'));
+  };
+
+  // Push SDK events (reader prompts, status, token requests) to the page holding the session.
+  React.useEffect(() => {
+    if (!paymentsEnabled) return;
+    const unsubscribe = onPaymentTerminalEvent((event) => {
+      if (!paymentSessionRef.current || event.sessionId !== paymentSessionRef.current) return;
+      if (event.type === 'sessionClosed') paymentSessionRef.current = null;
+      const safeArg = JSON.stringify(JSON.stringify({ type: event.type, payload: event.payload }));
+      webViewRef.current?.injectJavaScript(
+        `window.__fkPaymentEvent && window.__fkPaymentEvent(${safeArg}); true;`
+      );
+    });
+    return () => {
+      unsubscribe();
+      releasePaymentSession('unmount');
+    };
+  }, [paymentsEnabled]);
 
   const onMessageHandler = (event: any) => {
     const message = event.nativeEvent.data;
@@ -929,6 +1165,8 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
             .catch((err: any) => console.error('[WebView] Print failed:', err));
         } else if (data.type === 'FK_PRINTER') {
           handlePrinterRequest(data, event.nativeEvent?.url);
+        } else if (data.type === 'FK_PAYMENT') {
+          handlePaymentRequest(data, event.nativeEvent?.url);
         } else if (data.type === 'PDF_VIEWER_CLOSE') {
           // User closed PDF viewer, go back to previous page
           if (webViewRef.current) {
@@ -1141,7 +1379,9 @@ const WebViewComponent = forwardRef<WebViewComponentRef, WebViewComponentProps>(
         onLoadStart={() => {
           // Retires the old nonce at once: a page cannot post a request and then navigate to an
           // allow-listed origin to get it past the URL check.
-          if (silentPrintEnabled) rotatePrinterNonce();
+          if (bridgeEnabled) rotateBridgeNonce();
+          // A new document never inherits the old one's payment session or its operations.
+          if (paymentsEnabled) releasePaymentSession('navigation');
 
           // Don't reset error state when loading about:blank (error recovery)
           if (!error) {

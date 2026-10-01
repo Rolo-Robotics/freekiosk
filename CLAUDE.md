@@ -22,6 +22,7 @@ npm test -- --testPathPattern=foo   # Run a single test file
 cd android && ./gradlew assembleRelease                 # APK for the GitHub release
 cd android && ./gradlew assembleRelease -Pcloudprovi    # APK uploaded to the cloud
 cd android && ./gradlew bundleRelease   -Pplaystore     # AAB for the Play Store
+cd android && ./gradlew assembleRelease -Ppayments      # adds the payment terminal SDK (combines with the above)
 ```
 
 | Build | Goes where | Self-update | AccessibilityService |
@@ -44,6 +45,11 @@ service with `tools:node="remove"` in `android/app/src/<flag>/AndroidManifest.xm
 removes the declaration rather than disabling it - Play Protect reads the manifest, so
 `android:enabled="false"` would not help.
 
+`-Ppayments` is orthogonal to the three variants. It compiles `android/app/src/payments/java`
+(the Stripe Terminal SDK and its provider) instead of the `src/nopayments/java` stub, and raises
+minSdk to 26 for that build only. It is opt-in because the SDK is proprietary, large and needs
+API 26. See `docs/payments.md`.
+
 Output APK: `android/app/build/outputs/apk/release/app-release.apk`
 
 Requirements: Node 20+, JDK 17+, Android SDK 26+.
@@ -61,6 +67,7 @@ Key native modules:
 - **HttpServerModule.kt** — embedded HTTP server for REST API
 - **FreeKioskAccessibilityService.kt** — accessibility service for back-button/gesture suppression
 - **BackgroundAppMonitorService.kt** / **KioskWatchdogService.kt** — foreground services keeping kiosk alive
+- **payment/** — payment terminal bridge: `PaymentTerminalManager` (one SDK instance, one session, token hand-off, `isTransactionActive` guard read by the watchdog, lock task re-entry, overlays and screenshots), `PaymentTerminalModule` (RN bridge, JSON strings across), providers under `src/payments/` (see `docs/payments.md`)
 
 ### State & Storage
 

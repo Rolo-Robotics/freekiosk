@@ -244,6 +244,13 @@ class KioskWatchdogService : Service() {
             return
         }
 
+        // Same for a payment: Tap to Pay draws its screen from a separate process, which
+        // leaves MainActivity looking backgrounded. Relaunching over it cancels the payment.
+        if (com.freekiosk.payment.PaymentTerminalManager.isTransactionActive) {
+            DebugLog.d(TAG, "Payment in progress - skipping relaunch check")
+            return
+        }
+
         if (isMainActivityRunning()) return  // FreeKiosk itself is in foreground — fine
 
         // In external app mode, the external app is expected to be in the foreground.

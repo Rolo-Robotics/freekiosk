@@ -220,6 +220,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [windowPrintEnabled, setWindowPrintEnabled] = useState<boolean>(false);
   const [printPaperSize, setPrintPaperSize] = useState<string>('A4');
   const [silentPrintEnabled, setSilentPrintEnabled] = useState<boolean>(false);
+  const [paymentsEnabled, setPaymentsEnabled] = useState<boolean>(false);
+  const [paymentOrigins, setPaymentOrigins] = useState<string[]>([]);
   const [escPosWidthDots, setEscPosWidthDots] = useState<number>(384);
   const [escPosCut, setEscPosCut] = useState<boolean>(false);
   const [escPosFeedLines, setEscPosFeedLines] = useState<number>(0);
@@ -720,6 +722,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     const savedPrintPaperSize = await StorageService.getPrintPaperSize();
     setPrintPaperSize(savedPrintPaperSize);
     setSilentPrintEnabled(await StorageService.getSilentPrintEnabled());
+    setPaymentsEnabled(await StorageService.getPaymentsEnabled());
+    setPaymentOrigins(await StorageService.getPaymentOrigins());
     setEscPosWidthDots(await StorageService.getEscPosWidthDots());
     setEscPosCut(await StorageService.getEscPosCut());
     setEscPosFeedLines(await StorageService.getEscPosFeedLines());
@@ -1656,6 +1660,8 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
     await StorageService.saveWindowPrintEnabled(windowPrintEnabled);
     await StorageService.savePrintPaperSize(printPaperSize);
     await StorageService.saveSilentPrintEnabled(silentPrintEnabled);
+    await StorageService.savePaymentsEnabled(paymentsEnabled);
+    await StorageService.savePaymentOrigins(paymentOrigins);
     await StorageService.saveEscPosWidthDots(escPosWidthDots);
     await StorageService.saveEscPosCut(escPosCut);
     await StorageService.saveEscPosFeedLines(escPosFeedLines);
@@ -2019,6 +2025,10 @@ const SettingsScreenNew: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onEscPosFeedLinesChange={setEscPosFeedLines}
             printOrigins={printOrigins}
             onPrintOriginsChange={setPrintOrigins}
+            paymentsEnabled={paymentsEnabled}
+            onPaymentsEnabledChange={setPaymentsEnabled}
+            paymentOrigins={paymentOrigins}
+            onPaymentOriginsChange={setPaymentOrigins}
             urlRotationEnabled={urlRotationEnabled}
             onUrlRotationEnabledChange={setUrlRotationEnabled}
             urlRotationList={urlRotationList}

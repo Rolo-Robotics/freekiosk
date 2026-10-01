@@ -138,6 +138,12 @@ export const KEYS = {
   ESC_POS_WIDTH_DOTS: '@kiosk_esc_pos_width_dots',
   ESC_POS_CUT: '@kiosk_esc_pos_cut',
   ESC_POS_FEED_LINES: '@kiosk_esc_pos_feed_lines',
+  // Payment terminal bridge: window.FreeKiosk.payments (needs a -Ppayments build).
+  // Device-local on purpose: kept out of the structured backup/cloud config, so no remote
+  // channel can widen who may take payments. See docs/payments.md.
+  PAYMENTS_ENABLED: '@kiosk_payments_enabled',
+  // Origins allowed to use the payment bridge (JSON array). Fails closed: [] = none.
+  PAYMENT_ORIGINS: '@kiosk_payment_origins',
   // WebView Zoom Level
   WEBVIEW_ZOOM_LEVEL: '@kiosk_webview_zoom_level',
   // WebView Zoom Mode ('standard' = CSS zoom | 'fit' = viewport reflow, #188)
@@ -250,6 +256,18 @@ const deepMerge = (base: unknown, overlay: unknown): unknown => {
  */
 export const toPrintOrigins = (value: unknown): string[] | null =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : null;
+
+/**
+ * Normalizes the payment origin allow-list. Unlike print origins it fails closed: anything
+ * but an array reads as [] (no page), and only https:// origins count, because a page served
+ * over http or a user-accepted certificate can be rewritten in transit.
+ */
+export const toPaymentOrigins = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter(
+        (entry): entry is string => typeof entry === 'string' && /^https:\/\/[^/?#\s]+/i.test(entry.trim()),
+      )
+    : [];
 
 export const StorageService = {
   //URL
@@ -542,6 +560,9 @@ export const StorageService = {
         KEYS.ESC_POS_CUT,
         KEYS.ESC_POS_FEED_LINES,
         KEYS.PRINT_ORIGINS,
+        // Payment terminal bridge
+        KEYS.PAYMENTS_ENABLED,
+        KEYS.PAYMENT_ORIGINS,
         // WebView Zoom Level
         KEYS.WEBVIEW_ZOOM_LEVEL,
         KEYS.WEBVIEW_ZOOM_MODE,
@@ -2560,6 +2581,44 @@ export const StorageService = {
     } catch (error) {
       console.error('Error getting print origins:', error);
       return null;
+    }
+  },
+
+  // ============ Payment terminal bridge ============
+
+  savePaymentsEnabled: async (value: boolean): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.PAYMENTS_ENABLED, JSON.stringify(value));
+    } catch (error) {
+      console.error('Error saving payments enabled:', error);
+    }
+  },
+
+  getPaymentsEnabled: async (): Promise<boolean> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.PAYMENTS_ENABLED);
+      return value ? JSON.parse(value) === true : false;
+    } catch (error) {
+      console.error('Error getting payments enabled:', error);
+      return false;
+    }
+  },
+
+  savePaymentOrigins: async (value: string[]): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(KEYS.PAYMENT_ORIGINS, JSON.stringify(toPaymentOrigins(value)));
+    } catch (error) {
+      console.error('Error saving payment origins:', error);
+    }
+  },
+
+  getPaymentOrigins: async (): Promise<string[]> => {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.PAYMENT_ORIGINS);
+      return toPaymentOrigins(value ? JSON.parse(value) : []);
+    } catch (error) {
+      console.error('Error getting payment origins:', error);
+      return [];
     }
   },
 

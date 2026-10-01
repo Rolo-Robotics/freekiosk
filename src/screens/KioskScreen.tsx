@@ -10,7 +10,8 @@ import StatusBar from '../components/StatusBar';
 import MotionDetector from '../components/MotionDetector';
 import ProximityDetectionModule, { onProximityNear as onProximityNearEvent } from '../utils/ProximityDetectionModule';
 import ExternalAppOverlay from '../components/ExternalAppOverlay';
-import { StorageService, toPrintOrigins } from '../utils/storage';
+import { StorageService, toPrintOrigins, toPaymentOrigins } from '../utils/storage';
+import { isPaymentTransactionActive } from '../utils/PaymentTerminalModule';
 import { saveSecurePin, saveSecureMqttPassword, getSecureBasicAuthPassword } from '../utils/secureStorage';
 import KioskModule from '../utils/KioskModule';
 import AppLauncherModule from '../utils/AppLauncherModule';
@@ -228,6 +229,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   const [escPosCut, setEscPosCut] = useState<boolean>(false);
   const [escPosFeedLines, setEscPosFeedLines] = useState<number>(0);
   const [printOrigins, setPrintOrigins] = useState<string[] | null>(null);
+  const [paymentsEnabled, setPaymentsEnabled] = useState<boolean>(false);
+  const [paymentOrigins, setPaymentOrigins] = useState<string[]>([]);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [zoomMode, setZoomMode] = useState<string>('standard');
   const [disableUserZoom, setDisableUserZoom] = useState<boolean>(false);
@@ -1313,6 +1316,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       
       // Start rotation timer
       urlRotationTimerRef.current = setInterval(() => {
+        // Rotating away mid-payment would cancel it with the outcome unknown; skip this turn.
+        if (isPaymentTransactionActive()) return;
         setCurrentUrlIndex(prevIndex => {
           const nextIndex = (prevIndex + 1) % urlRotationList.length;
           setUrl(urlRotationList[nextIndex]);
@@ -1344,6 +1349,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     
     // Check for active event immediately
     const checkAndUpdateActiveEvent = () => {
+      // Switching page mid-payment would cancel it; the next minute's check picks this up.
+      if (isPaymentTransactionActive()) return;
       const activeEvent = getActiveEvent(urlPlannerEvents);
       const prevEvent = activeScheduledEventRef.current;
 
@@ -2028,6 +2035,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       setEscPosCut(bool(K.ESC_POS_CUT, false));
       setEscPosFeedLines(num(K.ESC_POS_FEED_LINES, 0));
       setPrintOrigins(toPrintOrigins(jsonParse(K.PRINT_ORIGINS, null)));
+      setPaymentsEnabled(bool(K.PAYMENTS_ENABLED, false));
+      setPaymentOrigins(toPaymentOrigins(jsonParse(K.PAYMENT_ORIGINS, [])));
       
       // Load WebView Zoom Level
       const savedZoomLevel = num(K.WEBVIEW_ZOOM_LEVEL, 100);
@@ -2294,8 +2303,16 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
   // screensaver. Extracted so it can be triggered by either the JS setTimeout (WebView/
   // media modes) or the native inactivity event (External App mode, where RN freezes JS
   // timers while FreeKiosk is backgrounded behind the external app).
+  // Latest resetTimer, for triggerScreensaverTimeout to re-arm through without a dependency cycle.
+  const resetTimerRef = useRef<(() => void) | null>(null);
   const triggerScreensaverTimeout = useCallback(() => {
     if (isScheduledSleep) return;
+    // A customer mid-payment is not inactive, whatever the touch timer says (Tap to Pay
+    // draws its own screen, so taps there never reach this one). Re-arm instead.
+    if (isPaymentTransactionActive()) {
+      resetTimerRef.current?.();
+      return;
+    }
     if (!(screensaverEnabled && inactivityEnabled)) return;
     // #190 — No motion pre-check in External App mode: FreeKiosk is backgrounded there,
     // so the 10s pre-check setTimeout below is frozen by RN (the exact timer freeze the
@@ -2332,6 +2349,7 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
       }, inactivityDelay);
     }
   };
+  resetTimerRef.current = resetTimer;
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -2449,6 +2467,10 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
     lastUserInteractionRef.current = Date.now();
 
     const tick = () => {
+      // Returning to the start page mid-payment would cancel it; count it as activity.
+      if (isPaymentTransactionActive()) {
+        lastUserInteractionRef.current = Date.now();
+      }
       const elapsed = Date.now() - lastUserInteractionRef.current;
       console.log(`[InactivityReturn] tick — elapsed=${Math.round(elapsed/1000)}s / ${inactivityReturnDelay}s, currentWebViewUrl="${currentWebViewUrlRef.current}"`);
       if (elapsed >= delayMs) {
@@ -3020,6 +3042,8 @@ const KioskScreen: React.FC<KioskScreenProps> = ({ navigation }) => {
               escPosCut={escPosCut}
               escPosFeedLines={escPosFeedLines}
               printOrigins={printOrigins}
+              paymentsEnabled={paymentsEnabled}
+              paymentOrigins={paymentOrigins}
               zoomLevel={zoomLevel}
               zoomMode={zoomMode}
               disableUserZoom={disableUserZoom}

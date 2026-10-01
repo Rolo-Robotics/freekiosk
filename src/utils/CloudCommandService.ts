@@ -23,6 +23,7 @@ import { ApiService, ActionResult } from './ApiService';
 import { getCloudCredentials, CloudCredentials } from './secureStorage';
 import { StorageService } from './storage';
 import ManagedAppInstaller from './ManagedAppInstaller';
+import { isPaymentTransactionActive } from './PaymentTerminalModule';
 
 const { HttpServerModule, WifiControlModule } = NativeModules;
 
@@ -357,6 +358,9 @@ class CloudCommandServiceClass {
 
     for (const u of updates) {
       if (!u.command_id || this.processed.has(u.command_id)) continue;
+      // An install (above all a self-update, which kills this process) mid-payment leaves
+      // the outcome unknown. Left unprocessed, the next poll picks it up.
+      if (isPaymentTransactionActive()) return;
       this.processed.add(u.command_id);
 
       // A self-update replaces this process mid-install, so the marker is what

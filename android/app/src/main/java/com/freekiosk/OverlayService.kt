@@ -128,6 +128,24 @@ class OverlayService : Service() {
             Handler(Looper.getMainLooper()).post { service.removeDimOverlay() }
         }
 
+        /**
+         * True while a payment SDK draws its own screen (Tap to Pay). The SDK refuses PIN
+         * entry while any overlay window is up, so every window this service owns is taken
+         * down and nothing re-adds one until the payment ends.
+         */
+        @Volatile
+        var suspendedForPayment = false
+            private set
+
+        fun setSuspendedForPayment(suspended: Boolean) {
+            if (suspendedForPayment == suspended) return
+            suspendedForPayment = suspended
+            val service = instance ?: return
+            Handler(Looper.getMainLooper()).post {
+                if (suspended) service.suspendOverlays() else service.resumeOverlays()
+            }
+        }
+
     }
 
     private var windowManager: WindowManager? = null
@@ -453,6 +471,7 @@ class OverlayService : Service() {
 
 
     private fun createOverlay() {
+        if (suspendedForPayment) return
         DebugLog.d("OverlayService", "createOverlay() called with returnMode='$returnMode', buttonPosition='$buttonPosition'")
         if (returnMode == "button") {
             DebugLog.d("OverlayService", "Creating BUTTON mode overlay")
@@ -649,6 +668,7 @@ class OverlayService : Service() {
     }
 
     private fun createStatusBar() {
+        if (suspendedForPayment) return
         try {
             // Convertir dp en pixels
             val density = resources.displayMetrics.density
@@ -1178,6 +1198,7 @@ class OverlayService : Service() {
      * 5-tap overlay, so that one stays above this window and the escape keeps working.
      */
     private fun addDimOverlay(level: Float): Boolean {
+        if (suspendedForPayment) return false
         val hasOverlayPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)
         val wm = windowManager
         if (!hasOverlayPermission || wm == null) return false
@@ -1330,6 +1351,7 @@ class OverlayService : Service() {
     private var foregroundNullCount = 0
     
     private fun checkForegroundApp() {
+        if (com.freekiosk.payment.PaymentTerminalManager.isTransactionActive) return
         try {
             val topPackage = getForegroundPackage()
             
@@ -1640,6 +1662,28 @@ class OverlayService : Service() {
     private fun stopMqttWatchdog() {
         mqttWatchdogRunnable?.let { mqttWatchdogHandler.removeCallbacks(it) }
         mqttWatchdogRunnable = null
+    }
+
+    private fun suspendOverlays() {
+        stopOverlayRepinLoop()
+        stopStatusUpdates()
+        removeDimOverlay()
+        destroyOverlay()
+        DebugLog.d("OverlayService", "Overlays suspended for a payment")
+    }
+
+    private fun resumeOverlays() {
+        try {
+            createOverlay()
+            if (statusBarEnabled) {
+                createStatusBar()
+                startStatusUpdates()
+            }
+            if (lockedPackage != null) startOverlayRepinLoop()
+            DebugLog.d("OverlayService", "Overlays restored after a payment")
+        } catch (e: Exception) {
+            DebugLog.errorProduction("OverlayService", "Failed to restore overlays: ${e.message}")
+        }
     }
 
     private fun destroyOverlay() {

@@ -8,6 +8,8 @@ import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.freekiosk.api.HttpServerPackage
 import com.freekiosk.mqtt.MqttPackage
+import com.freekiosk.payment.PaymentProviders
+import com.freekiosk.payment.PaymentTerminalPackage
 import com.freekiosk.printing.SilentPrintPackage
 
 class MainApplication : Application(), ReactApplication {
@@ -42,12 +44,18 @@ class MainApplication : Application(), ReactApplication {
           add(AudioControlPackage())
           add(FlashlightPackage())
           add(RotationControlPackage())
+          add(PaymentTerminalPackage())
         },
     )
   }
 
   override fun onCreate() {
     super.onCreate()
+    // Stripe Tap to Pay runs in a dedicated process that creates a second Application.
+    // Starting React Native, the services and the receivers again in there would give
+    // two kiosks fighting over one screen. Always false without -Ppayments.
+    if (PaymentProviders.isInPaymentSdkProcess()) return
+    PaymentProviders.onApplicationCreate(this)
     loadReactNative(this)
   }
 }
