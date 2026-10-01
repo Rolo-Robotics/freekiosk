@@ -74,11 +74,11 @@ adb shell dpm set-device-owner com.freekiosk/.DeviceAdminReceiver
 | Follow release direction | [Roadmap and Changelog](docs/roadmap-and-changelog.md) |
 | Contribute code | [Development Guide](docs/development.md) |
 
-## ☁️ FreeKiosk Cloud (closed beta)
+## ☁️ FreeKiosk Cloud (open beta)
 
 From `v2.0.0-beta.1`, FreeKiosk can enroll into **FreeKiosk Cloud**, a companion server that manages a fleet from a web dashboard: live telemetry, configuration pushed to devices or groups, remote commands, screenshots, and over-the-air app updates. A factory-reset tablet can be provisioned end to end by scanning a QR code at the Android setup wizard.
 
-**It is a closed beta, by invitation only.** The `v2.0.0-beta.x` builds are published as GitHub **pre-releases**: the feature works and is in daily use, but the OTA update path, QR provisioning and Lock Mode behaviour have not yet been proven across enough real hardware for us to call it done. Request an invitation at [support@freekiosk.app](mailto:support@freekiosk.app).
+**It is an open beta, self-service sign-up.** The `v2.0.0-beta.x` builds are published as GitHub **pre-releases**: the feature works and is in daily use, but the OTA update path, QR provisioning and Lock Mode behaviour have not yet been proven across enough real hardware for us to call it done. Sign up at [cloud.freekiosk.app](https://cloud.freekiosk.app).
 
 **The app itself is unaffected.** FreeKiosk stays free and MIT licensed, and the cloud is entirely opt-in: nothing leaves the device until you enroll it. Every kiosk feature, the REST API and the MQTT integration work exactly as before without a cloud account, and always will.
 
@@ -95,7 +95,7 @@ From `v2.0.0-beta.1`, FreeKiosk can enroll into **FreeKiosk Cloud**, a companion
 | Device Owner mode | ✅ | ✅ |
 | REST API | ✅ | ✅ |
 | MQTT + Home Assistant discovery | ✅ | ❌ |
-| Cloud fleet management | 🔵 Closed beta (see below) | ✅ |
+| Cloud fleet management | 🔵 Open beta (see below) | ✅ |
 | Self-hostable management server | 🔵 Planned, once stable | 🔴 Hosted only |
 
 ## 🛠️ Tech stack
@@ -107,7 +107,7 @@ From `v2.0.0-beta.1`, FreeKiosk can enroll into **FreeKiosk Cloud**, a companion
 ## 🗺️ Roadmap snapshot
 
 - `v1.2.x`: reliability and operational hardening (shipped)
-- `v2.0.0-beta.x`: cloud fleet management, in closed beta
+- `v2.0.0-beta.x`: cloud fleet management, in open beta
 - `v2.0.0`: cloud out of beta, once the OTA update path, QR provisioning and Lock Mode behaviour are proven on real fleets
 - later: the management server released for self-hosting
 
